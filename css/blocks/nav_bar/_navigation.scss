@@ -1,0 +1,58 @@
+.navigation {
+    @include flex-center;
+    height: 60px;
+    width: 100%;
+    background-color: var(--color-dark-alt);
+    border-bottom: var(--border);
+
+    &__inner {
+        @include flex-center;
+        column-gap: 15px;
+        width: 100%;
+                position: relative; 
+
+    }
+    
+    &__brand-logo {
+        flex-shrink: 0; 
+        
+        img {
+            max-width: 40px;
+            border-radius: var(--border-radius-circle);
+        }
+    }
+
+
+    &__user-info {
+        @include flex-center;
+        gap: 1rem;
+        display: none;
+        
+        .navigation__user-content {
+            @include flex-center;
+            gap: 1rem;
+        }
+
+        .navigation__user-name {
+            color: var(--color-light);
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .navigation__logout-btn {
+            background: transparent;
+            color: var(--color-accent);
+            border: 1px solid var(--color-accent);
+            padding: 0.25rem 0.5rem;
+            border-radius: var(--border-radius-small);
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+
+            &:hover {
+                background: var(--color-accent);
+                color: white;
+            }
+        }
+    }
+}

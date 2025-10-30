@@ -1,0 +1,110 @@
+.listen-later {
+  &__link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: color 0.2s ease;
+    &:hover {
+      color: var(--color-accent);
+    }
+  }
+
+    &__arrow {
+        font-size: 1.1rem;
+        transition: transform 0.2s ease;
+    }
+
+    &__link:hover &__arrow {
+        transform: translateX(3px);
+    }
+
+    &__list {
+        background: var(--color-dark-alt);
+        border-radius: var(--border-radius);
+        padding: 0.5rem;
+        display: flex;
+        flex-direction: column;
+    }
+
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem;
+    border-radius: var(--border-radius-small);
+    transition: background-color 0.2s ease;
+    cursor: pointer;
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+  }
+
+  &__cover {
+    width: 60px;
+    border-radius: var(--border-radius-small);
+    border: var(--border);
+    flex-shrink: 0;
+    object-fit: cover;
+    transition: opacity 0.2s ease;
+
+    &:hover {
+      opacity: 0.8;
+    }
+  }
+
+  &__album {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-light);
+    margin: 0 0 0.25rem 0;
+  }
+
+  &__artist {
+    font-size: 14px;
+    color: var(--color-light-secondary);
+    margin: 0;
+  }
+
+  &__info {
+    flex: 1;
+    min-width: 0; 
+  }
+
+  &__item--loading {
+    .listen-later__cover {
+      background: linear-gradient(90deg, #2a2a2a 25%, #3a3a3a 50%, #2a2a2a 75%);
+      background-size: 200% 100%;
+      animation: loading 1.5s infinite;
+    }
+
+    .listen-later__album,
+    .listen-later__artist {
+      background: linear-gradient(90deg, #2a2a2a 25%, #3a3a3a 50%, #2a2a2a 75%);
+      background-size: 200% 100%;
+      animation: loading 1.5s infinite;
+      color: transparent;
+      border-radius: 4px;
+    }
+  }
+
+  &__empty {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: #666;
+    font-style: italic;
+
+    &::before {
+      content: "🎵";
+      display: block;
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+  }
+}
+
+@keyframes loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

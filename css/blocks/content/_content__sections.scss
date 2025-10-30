@@ -1,0 +1,18 @@
+.content__sections {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: var(--content-sections-gap);
+    margin-top: var(--content-sections-gap);
+}
+
+.content__section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--content-sections-gap);
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}

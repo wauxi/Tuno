@@ -1,0 +1,65 @@
+@include mobile {
+  .navigation {
+    &__inner {
+      column-gap: 5px;
+    }
+
+    &__search {
+      width: 40px;
+      height: 40px;
+      flex-grow: 0;
+      border-radius: var(--border-radius-circle);
+      justify-content: center; 
+
+      &-input {
+        display: none;
+      }
+
+      &-icon {
+        margin: 0;
+      }
+    }
+  }
+
+  .button {
+    font-size: 14px;
+  }
+
+  .info__navbar {
+    gap: 1px;
+  }
+
+  .content__sections {
+    grid-template-columns: 1fr;
+    gap: var(--content-sections-gap);
+    margin-top: var(--content-sections-gap);
+  }
+
+  .album-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .search-results {
+    max-height: 300px;
+  }
+
+  .search-result {
+    padding: 10px 12px;
+      &__cover {
+          width: 40px;
+          height: 40px;
+      }
+
+      &__info {
+          margin-left: 10px;
+      }
+
+      &__album {
+          font-size: 13px;
+      }
+
+      &__artist {
+          font-size: 11px;
+      }
+    }
+}

@@ -1,0 +1,103 @@
+.recently__rating {
+    @include flex-center;
+    gap: 0.1rem;
+    margin-top: 5px;
+}
+
+.star {
+    font-size: 1.25rem;
+    line-height: 1;
+    display: inline-block;
+
+    &--full {
+        color: #ffd700;
+    }
+
+    &--half {
+        position: relative;
+        display: inline-block;
+
+        .star-half-bg {
+            color: var(--color-gray);
+        }
+
+        .star-half-fill {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 50%;
+            overflow: hidden;
+            color: #ffd700;
+        }
+    }
+
+    &--empty {
+        color: var(--color-gray);
+    }
+}
+
+.no-rating {
+    color: var(--color-light-secondary);
+    font-size: 0.8rem;
+    font-style: italic;
+}
+
+.rating-selector {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.2rem;
+    
+    .rating-star {
+        font-size: 2rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        user-select: none;
+        line-height: 1;
+        display: inline-block;
+        
+        &--selected {
+            color: #ffd700;
+        }
+        
+        &--half {
+            position: relative;
+            display: inline-block;
+            color: #666;
+            
+            &::before {
+                content: '★';
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 50%;
+                overflow: hidden;
+                color: #ffd700;
+            }
+        }
+        
+        &--unselected {
+            color: #666;
+        }
+        
+        &--hover-full {
+            color: #ffed4e !important;
+            transform: scale(1.1);
+        }
+        
+        &--hover-half {
+            color: #666 !important;
+            transform: scale(1.1);
+            
+            &::before {
+                content: '★';
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 50%;
+                overflow: hidden;
+                color: #ffed4e;
+            }
+        }
+    }
+}

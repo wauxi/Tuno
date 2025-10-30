@@ -1,0 +1,22 @@
+.buttons {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.button {
+    @include flex-center;
+    height: 40px;
+    border: none;
+    cursor: pointer;
+    background-color: transparent;
+    color: var(--color-light);
+    border-radius: var(--border-radius);
+    transition: background-color 0.3s ease;
+    padding: 0 20px;
+    font-weight: 500;
+
+    &:hover {
+        background-color: #424242;
+    }
+}
