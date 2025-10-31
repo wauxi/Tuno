@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Test</title>
+</head>
+<body>
+    <h1>Debug Test</h1>
+    <button onclick="testImports()">Test Imports</button>
+    <button onclick="clearStorage()">Clear Storage</button>
+    <button onclick="checkData()">Check Data</button>
+    <pre id="output"></pre>
+    
+    <script type="module">
+        import { getItem, setItem } from './js/utils/storageUtils.js';
+        import { getCurrentUserId } from './js/utils/authUtils.js';
+        
+        window.testImports = function() {
+            const output = document.getElementById('output');
+            try {
+                // Test storageUtils
+                setItem('test', { foo: 'bar' });
+                const result = getItem('test');
+                output.textContent = 'storageUtils work: ' + JSON.stringify(result);
+                
+                // Test authUtils
+                const userId = getCurrentUserId();
+                output.textContent += '\nCurrent user ID: ' + userId;
+            } catch (error) {
+                output.textContent = 'Error: ' + error.message;
+            }
+        };
+        
+        window.clearStorage = function() {
+            localStorage.clear();
+            document.getElementById('output').textContent = 'Storage cleared!';
+        };
+        
+        window.checkData = async function() {
+            const output = document.getElementById('output');
+            try {
+                const userId = getCurrentUserId();
+                const response = await fetch(`http://ms2/php/api.php?user_id=${userId}`);
+                const data = await response.json();
+                output.textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                output.textContent = 'Error: ' + error.message;
+            }
+        };
+    </script>
+</body>
+</html>

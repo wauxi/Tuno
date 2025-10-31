@@ -1,3 +1,5 @@
+import { getCurrentUserData, clearCurrentUser } from '../utils/authUtils.js';
+
 export class AuthService {
     constructor() {
         this.currentUser = null;
@@ -5,15 +7,8 @@ export class AuthService {
     }
     
     checkAuth() {
-        const userData = localStorage.getItem('currentUser');
-        if (userData) {
-            try {
-                this.currentUser = JSON.parse(userData);
-                this.isLoggedIn = true;
-            } catch (error) {
-                this.logout();
-            }
-        }
+        this.currentUser = getCurrentUserData();
+        this.isLoggedIn = this.currentUser !== null;
     }
     
     async logout() {
@@ -34,8 +29,7 @@ export class AuthService {
         } finally {
             this.currentUser = null;
             this.isLoggedIn = false;
-            localStorage.removeItem('currentUser');
-            localStorage.removeItem('currentUserId');
+            clearCurrentUser();
         }
     }
     

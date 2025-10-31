@@ -3,6 +3,12 @@ define('SECURE_ACCESS', true);
 require_once 'auth-functions.php';
 require_once 'Database.php';
 require_once 'spotify-helper.php';
+require_once 'InputValidator.php';
+require_once 'Logger.php';
+
+// Настройка логгера
+Logger::setDevelopmentMode(true); // Изменить на false в production
+Logger::setLevel(Logger::LEVEL_INFO);
 
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
@@ -17,16 +23,15 @@ $pdo = Database::getInstance()->getConnection();
 createCoverCacheTable($pdo);
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['action'] === 'search') {
-    error_log("=== ПОИСК АЛЬБОМОВ ===");
-    error_log("GET параметры: " . json_encode($_GET));
+    Logger::apiRequest('GET', '/api.php?action=search', ['query' => $_GET['q'] ?? '']);
     handleSearchAlbums();
     exit;
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     try {
-        $userId = isset($_GET['user_id']) ? (int)$_GET['user_id'] : 1;
-        error_log("API запрос для пользователя: " . $userId);
+        $userId = isset($_GET['user_id']) ? InputValidator::validateUserId($_GET['user_id']) : 1;
+        Logger::debug('Loading data for user', ['user_id' => $userId]);
         
         $recentQuery = "
             SELECT 
@@ -205,15 +210,16 @@ function handleSearchAlbums() {
     global $pdo;
     
     try {
-        $query = isset($_GET['q']) ? trim($_GET['q']) : '';
-        
-        error_log("🔍 Поиск по запросу: '$query'");
+        // Валидация поискового запроса
+        $query = isset($_GET['q']) ? InputValidator::validateString($_GET['q'], 100) : '';
         
         if (empty($query)) {
-            error_log("⚠️ Пустой запрос поиска");
+            Logger::debug('Empty search query');
             echo json_encode(['success' => true, 'albums' => [], 'query' => ''], JSON_UNESCAPED_UNICODE);
             return;
         }
+        
+        Logger::info('Album search', ['query' => $query]);
         
         $searchQuery = "
             SELECT 
@@ -239,7 +245,7 @@ function handleSearchAlbums() {
         $searchTerm = "%{$query}%";
         $exactSearchTerm = "{$query}%";
         
-        error_log("📝 SQL запрос: " . str_replace('?', "'$searchTerm'", $searchQuery));
+        $startTime = microtime(true);
         
         $stmt = $pdo->prepare($searchQuery);
         $stmt->execute([
@@ -251,18 +257,17 @@ function handleSearchAlbums() {
         
         $albums = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
-        error_log("📊 Найдено альбомов: " . count($albums));
+        $executionTime = round((microtime(true) - $startTime) * 1000, 2);
+        Logger::debug('Search query executed', [
+            'count' => count($albums),
+            'execution_time' => $executionTime . 'ms'
+        ]);
         
         foreach ($albums as &$album) {
-            error_log("🎵 Обрабатываем альбом: {$album['album_name']} - {$album['artist']}");
-            error_log("🔗 Spotify ссылка: {$album['spotify_link']}");
-            
             $albumId = getSpotifyAlbumId($album['spotify_link']);
-            error_log("🆔 Spotify ID: " . ($albumId ?: 'НЕ НАЙДЕН'));
             
             if ($albumId) {
                 $album['coverUrl'] = getSpotifyCoverUrlWithCache($albumId, $pdo);
-                error_log("🖼️ URL обложки: " . ($album['coverUrl'] ?: 'НЕ ПОЛУЧЕН'));
             } else {
                 $album['coverUrl'] = null;
             }
@@ -270,7 +275,6 @@ function handleSearchAlbums() {
             if (!$album['coverUrl']) {
                 $album['coverUrl'] = 'https://via.placeholder.com/150x150/1a1a1a/ffffff?text=' . 
                                    urlencode($album['album_name']);
-                error_log("🖼️ Используем placeholder: {$album['coverUrl']}");
             }
         }
         
@@ -278,29 +282,36 @@ function handleSearchAlbums() {
             'success' => true, 
             'albums' => $albums,
             'query' => $query,
-            'count' => count($albums),
-            'debug' => [
-                'searchTerm' => $searchTerm,
-                'timestamp' => date('Y-m-d H:i:s')
-            ]
+            'count' => count($albums)
         ];
         
-        error_log("✅ Ответ готов: " . json_encode($response, JSON_UNESCAPED_UNICODE));
+        Logger::info('Search completed', [
+            'count' => count($albums),
+            'query' => $query
+        ]);
+        
         echo json_encode($response, JSON_UNESCAPED_UNICODE);
         
     } catch(PDOException $e) {
-        error_log("❌ Ошибка поиска: " . $e->getMessage());
+        Logger::error('Database error in search', ['error' => $e->getMessage()]);
         http_response_code(500);
         echo json_encode([
             'success' => false, 
-            'error' => 'Ошибка выполнения поиска: ' . $e->getMessage()
+            'error' => 'Ошибка выполнения поиска'
+        ], JSON_UNESCAPED_UNICODE);
+    } catch(InvalidArgumentException $e) {
+        Logger::warning('Invalid search query', ['error' => $e->getMessage()]);
+        http_response_code(400);
+        echo json_encode([
+            'success' => false, 
+            'error' => 'Ошибка валидации: ' . $e->getMessage()
         ], JSON_UNESCAPED_UNICODE);
     } catch(Exception $e) {
-        error_log("❌ Общая ошибка поиска: " . $e->getMessage());
+        Logger::error('Unexpected error in search', ['error' => $e->getMessage()]);
         http_response_code(500);
         echo json_encode([
             'success' => false, 
-            'error' => 'Общая ошибка: ' . $e->getMessage()
+            'error' => 'Общая ошибка'
         ], JSON_UNESCAPED_UNICODE);
     }
 }

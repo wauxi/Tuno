@@ -2,6 +2,11 @@
 define('SECURE_ACCESS', true);
 require_once 'auth-functions.php';
 require_once 'Database.php';
+require_once 'InputValidator.php';
+require_once 'Logger.php';
+
+Logger::setDevelopmentMode(true);
+Logger::setLevel(Logger::LEVEL_INFO);
 
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
@@ -43,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         session_destroy();
         
-        error_log("🚪 Пользователь $logoutUser вышел из системы");
+        Logger::auth("logout", $logoutUser);
         
         echo json_encode([
             'success' => true,
@@ -80,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
             
-            if ($user && $user['password'] === $inputPassword) {
+            if ($user && password_verify($inputPassword, $user['password'])) {
                 session_start();
                 session_regenerate_id(true); 
                 
@@ -88,7 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['username'] = $user['username'];
                 $_SESSION['role'] = $user['role'] ?? 'user';
                 
-                error_log("🔑 Пользователь {$user['username']} (роль: {$user['role']}) успешно авторизовался");
+                Logger::auth("login", $user['username'], true);
                 
                 echo json_encode([
                     'success' => true,
@@ -102,7 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ]
                 ]);
             } else {
-                error_log("❌ Неудачная попытка входа для пользователя: $inputUsername");
+                Logger::auth("login", $inputUsername, false);
                 echo json_encode(['success' => false, 'message' => 'Неверный никнейм или пароль']);
             }
             
@@ -116,11 +121,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 exit;
             }
             
+            $hashedPassword = password_hash($inputPassword, PASSWORD_ARGON2ID);
+
             $insertQuery = "INSERT INTO users (username, display_name, password, role) VALUES (?, ?, ?, ?)";
             $insertStmt = $pdo->prepare($insertQuery);
-            $insertStmt->execute([$inputUsername, $inputUsername, $inputPassword, 'user']);
+            $insertStmt->execute([$inputUsername, $inputUsername, $hashedPassword, 'user']);
             
-            error_log("👤 Зарегистрирован новый пользователь: $inputUsername");
+            Logger::info("User registered", ['username' => $inputUsername]);
             
             echo json_encode([
                 'success' => true,
@@ -132,7 +139,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
     } catch(PDOException $e) {
-        error_log("Ошибка базы данных в auth-api: " . $e->getMessage());
+        Logger::error("Database error in auth-api", ['error' => $e->getMessage()]);
         echo json_encode(['success' => false, 'message' => 'Ошибка сервера']);
     }
     

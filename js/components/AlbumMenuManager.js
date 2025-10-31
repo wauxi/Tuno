@@ -118,17 +118,17 @@ export class AlbumMenuManager {
                 albumElement.style.transition = `opacity ${UI.ANIMATION_DURATION}ms ease`;
                 albumElement.style.opacity = '0';
                 
-                setTimeout(() => {
-                    albumElement.remove();
-                }, UI.ANIMATION_DURATION);
+                await new Promise(resolve => {
+                    albumElement.addEventListener('transitionend', resolve, { once: true });
+                    setTimeout(resolve, UI.ANIMATION_DURATION + 50);
+                });
                 
+                albumElement.remove();
                 alert('Альбом успешно удален из базы данных');
                 
-                setTimeout(() => {
-                    if (this.dataService) {
-                        window.location.reload();
-                    }
-                }, UI.INIT_DELAY * 5);
+                if (this.dataService) {
+                    window.location.reload();
+                }
                 
             } else {
                 throw new Error(result.error || result.message || 'Ошибка при удалении');

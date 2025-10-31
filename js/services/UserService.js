@@ -11,6 +11,13 @@ export class UserService {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await response.text();
+                console.error('Response is not JSON:', text.substring(0, 200));
+                throw new Error('Server returned HTML instead of JSON. Check PHP errors.');
+            }
+            
             const data = await response.json();
             
             if (data.success && data.users && data.users.length > 0) {

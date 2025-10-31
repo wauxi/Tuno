@@ -1,3 +1,6 @@
+import { CONFIG } from '../config/constants.js';
+import { getItem, setItem, removeItems } from '../utils/storageUtils.js';
+
 export class DataService {
     constructor({ apiUrl, cacheLifetime = 3600000, userId }) {
         this.apiUrl = apiUrl || 'http://ms2/php/api.php';
@@ -90,16 +93,14 @@ export class DataService {
     
 
     clearCache() {
-        try {
-            localStorage.removeItem(this.cacheKeys.recentActivity);
-            localStorage.removeItem(this.cacheKeys.recentActivityTimestamp);
-            localStorage.removeItem(this.cacheKeys.listenLater);
-            localStorage.removeItem(this.cacheKeys.listenLaterTimestamp);
-            localStorage.removeItem(this.cacheKeys.albums);
-            localStorage.removeItem(this.cacheKeys.albumsTimestamp);
-        } catch (error) {
-            console.warn('⚠️ Ошибка очистки кеша:', error);
-        }
+        removeItems([
+            this.cacheKeys.recentActivity,
+            this.cacheKeys.recentActivityTimestamp,
+            this.cacheKeys.listenLater,
+            this.cacheKeys.listenLaterTimestamp,
+            this.cacheKeys.albums,
+            this.cacheKeys.albumsTimestamp
+        ]);
     }
     
 
@@ -107,17 +108,17 @@ export class DataService {
         try {
             const now = Date.now();
             
-            const recentActivityTimestamp = localStorage.getItem(this.cacheKeys.recentActivityTimestamp);
-            const listenLaterTimestamp = localStorage.getItem(this.cacheKeys.listenLaterTimestamp);
+            const recentActivityTimestamp = getItem(this.cacheKeys.recentActivityTimestamp);
+            const listenLaterTimestamp = getItem(this.cacheKeys.listenLaterTimestamp);
             
             const isRecentValid = recentActivityTimestamp && (now - parseInt(recentActivityTimestamp)) < this.cacheLifetime;
             const isLaterValid = listenLaterTimestamp && (now - parseInt(listenLaterTimestamp)) < this.cacheLifetime;
             
             if (isRecentValid && isLaterValid) {
                 return {
-                    recentActivity: JSON.parse(localStorage.getItem(this.cacheKeys.recentActivity) || '[]'),
-                    listenLater: JSON.parse(localStorage.getItem(this.cacheKeys.listenLater) || '[]'),
-                    albums: JSON.parse(localStorage.getItem(this.cacheKeys.albums) || '[]')
+                    recentActivity: getItem(this.cacheKeys.recentActivity, []),
+                    listenLater: getItem(this.cacheKeys.listenLater, []),
+                    albums: getItem(this.cacheKeys.albums, [])
                 };
             }
         } catch (error) {
@@ -132,14 +133,14 @@ export class DataService {
         try {
             const now = Date.now();
             
-            localStorage.setItem(this.cacheKeys.recentActivity, JSON.stringify(this.data.recentActivity));
-            localStorage.setItem(this.cacheKeys.recentActivityTimestamp, now.toString());
+            setItem(this.cacheKeys.recentActivity, this.data.recentActivity);
+            setItem(this.cacheKeys.recentActivityTimestamp, now.toString());
             
-            localStorage.setItem(this.cacheKeys.listenLater, JSON.stringify(this.data.listenLater));
-            localStorage.setItem(this.cacheKeys.listenLaterTimestamp, now.toString());
+            setItem(this.cacheKeys.listenLater, this.data.listenLater);
+            setItem(this.cacheKeys.listenLaterTimestamp, now.toString());
             
-            localStorage.setItem(this.cacheKeys.albums, JSON.stringify(this.data.albums));
-            localStorage.setItem(this.cacheKeys.albumsTimestamp, now.toString());
+            setItem(this.cacheKeys.albums, this.data.albums);
+            setItem(this.cacheKeys.albumsTimestamp, now.toString());
         } catch (error) {
             console.warn('⚠️ Ошибка сохранения в кеш:', error);
         }

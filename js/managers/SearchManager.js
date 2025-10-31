@@ -1,4 +1,5 @@
 import { UI } from '../config/constants.js';
+import { getCurrentUserId } from '../utils/authUtils.js';
 
 export class SearchManager {
     constructor(ratingManager) {
@@ -8,7 +9,7 @@ export class SearchManager {
         this.searchResults = null;
         this.searchTimeout = null;
         
-        setTimeout(() => this.init(), UI.INIT_DELAY);
+        this.init();
     }
     
     init() {
@@ -139,7 +140,7 @@ export class SearchManager {
         try {
             const albumData = JSON.parse(resultElement.dataset.album.replace(/&quot;/g, '"'));
             
-            const currentUserId = localStorage.getItem('currentUserId') || 1;
+            const currentUserId = getCurrentUserId();
             let existingRating = null;
             
             try {

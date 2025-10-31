@@ -1,3 +1,5 @@
+import { setCurrentUserData, getCurrentUserData } from './authUtils.js';
+
 class AuthManager {
     constructor() {
         const urlParams = new URLSearchParams(window.location.search);
@@ -20,10 +22,7 @@ class AuthManager {
         this.switchMode.addEventListener('click', this.toggleMode.bind(this));
         
         this.updateUI();
-        
-        setTimeout(() => {
-            this.checkCurrentUser();
-        }, 100);
+        this.checkCurrentUser();
     }
     
     toggleMode(e) {
@@ -113,12 +112,11 @@ class AuthManager {
             
             if (data.success) {
                 if (this.isLoginMode) {
-                    localStorage.setItem('currentUser', JSON.stringify(data.user));
+                    setCurrentUserData(data.user);
                     this.showSuccess('Вход выполнен успешно!');
                     
-                    setTimeout(() => {
-                        window.location.href = 'Home.html';
-                    }, 1000);
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    window.location.href = 'Home.html';
                 } else {
                     this.showSuccess('Регистрация прошла успешно! Теперь можете войти.');
                     this.isLoginMode = true;
@@ -138,7 +136,7 @@ class AuthManager {
     }
     
     checkCurrentUser() {
-        const currentUser = localStorage.getItem('currentUser');
+        const currentUser = getCurrentUserData();
         if (currentUser) {
             window.location.href = 'Home.html';
         }

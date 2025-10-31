@@ -21,7 +21,7 @@ export class UIManager {
                 userInfo.innerHTML = `
                     <div class="navigation__user-content">
                         <span class="navigation__user-name">${currentUser.display_name || currentUser.username}</span>
-                        <button class="navigation__logout-btn" onclick="musicboardApp.logout()">Выйти</button>
+                        <button class="navigation__logout-btn" data-action="logout">Выйти</button>
                     </div>
                 `;
                 userInfo.style.display = 'flex';
@@ -31,10 +31,10 @@ export class UIManager {
             if (authButtons) {
                 authButtons.style.display = 'flex';
                 authButtons.innerHTML = `
-                    <button type="button" class="navigation__auth-button button" onclick="musicboardApp.goToLogin()">
+                    <button type="button" class="navigation__auth-button button" data-action="login">
                         <span>Login</span>
                     </button>
-                    <button type="button" class="navigation__auth-button button" onclick="musicboardApp.goToSignup()">
+                    <button type="button" class="navigation__auth-button button" data-action="signup">
                         <span>Sign Up</span>
                     </button>
                 `;
@@ -80,7 +80,7 @@ export class UIManager {
             const isActive = this.viewingUserId === user.id;
             const userName = user.display_name || user.username;
             const activeClass = isActive ? 'active' : '';
-            return `<button onclick="musicboardApp.switchUser(${user.id})" class="${activeClass}">${userName}</button>`;
+            return `<button data-action="switch-user" data-user-id="${user.id}" class="${activeClass}">${userName}</button>`;
         }).join('');
     }
     

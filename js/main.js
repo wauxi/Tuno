@@ -9,6 +9,7 @@ import { UIManager } from './components/UIManager.js';
 import { AlbumMenuManager } from './components/AlbumMenuManager.js';
 import { eventBus, EVENTS } from './utils/EventBus.js';
 import { CONFIG, DEFAULTS, UI, ROUTES } from './config/constants.js';
+import { setCurrentUserId } from './utils/authUtils.js';
 import './components/RatingModalComponent.js';
 
 
@@ -44,6 +45,7 @@ class MusicboardApp {
         this.initDataServices();
         await this.loadData();
         this.updateUrl();
+        this.setupEventDelegation();
         
         this.initRatingSystem();
         if (this.ratingManager) {
@@ -60,6 +62,35 @@ class MusicboardApp {
         } else {
             console.error('RatingManager не найден для SearchManager');
         }
+    }
+    
+    setupEventDelegation() {
+        document.addEventListener('click', (e) => {
+            const target = e.target.closest('[data-action]');
+            if (!target) return;
+            
+            const action = target.dataset.action;
+            
+            switch (action) {
+                case 'logout':
+                    e.preventDefault();
+                    this.logout();
+                    break;
+                case 'login':
+                    e.preventDefault();
+                    this.goToLogin();
+                    break;
+                case 'signup':
+                    e.preventDefault();
+                    this.goToSignup();
+                    break;
+                case 'switch-user':
+                    e.preventDefault();
+                    const userId = parseInt(target.dataset.userId);
+                    if (userId) this.switchUser(userId);
+                    break;
+            }
+        });
     }
     
     isCurrentUserAdmin() {
@@ -89,13 +120,12 @@ class MusicboardApp {
     
     initRatingSystem() {
         this.ratingManager = new RatingManager();
-        window.ratingManager = this.ratingManager;
         
         const currentUser = this.authService.getCurrentUser();
         if (currentUser) {
-            localStorage.setItem('currentUserId', currentUser.id);
+            setCurrentUserId(currentUser.id);
         } else {
-            localStorage.setItem('currentUserId', this.viewingUserId || DEFAULTS.GUEST_USER_ID);
+            setCurrentUserId(this.viewingUserId || DEFAULTS.GUEST_USER_ID);
         }
         
         eventBus.on(EVENTS.RATING_UPDATED, () => {
@@ -221,26 +251,58 @@ class MusicboardApp {
     }
 }
 
-let appInstance = null;
-
-document.addEventListener('DOMContentLoaded', () => {
-    appInstance = new MusicboardApp();
+// IIFE для изоляции кода
+(function() {
+    'use strict';
     
-    eventBus.on(EVENTS.USER_SWITCH, (data) => appInstance?.switchUser(data.userId));
-    eventBus.on(EVENTS.NAVIGATE, (data) => {
-        if (data.route === 'login') appInstance?.goToLogin();
-        else if (data.route === 'signup') appInstance?.goToSignup();
+    let appInstance = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        appInstance = new MusicboardApp();
+
+        eventBus.on(EVENTS.USER_SWITCH, (data) => appInstance?.switchUser(data.userId));
+        eventBus.on(EVENTS.NAVIGATE, (data) => {
+            if (data.route === 'login') appInstance?.goToLogin();
+            else if (data.route === 'signup') appInstance?.goToSignup();
+        });
     });
-});
 
-
-window.musicboardApp = {
-    switchUser: (userId) => eventBus.emit(EVENTS.USER_SWITCH, { userId }),
-    goToLogin: () => eventBus.emit(EVENTS.NAVIGATE, { route: 'login' }),
-    goToSignup: () => eventBus.emit(EVENTS.NAVIGATE, { route: 'signup' }),
-    logout: () => appInstance?.logout(),
-    refreshRatings: () => appInstance?.refreshRatings(),
-    getRatingManager: () => appInstance?.getRatingManager(),
-    getCurrentUser: () => appInstance?.getCurrentUser(),
-    isCurrentUserAdmin: () => appInstance?.isCurrentUserAdmin()
-};
+    // Минимальное публичное API
+    const publicAPI = {
+        switchUser: (userId) => eventBus.emit(EVENTS.USER_SWITCH, { userId }),
+        goToLogin: () => eventBus.emit(EVENTS.NAVIGATE, { route: 'login' }),
+        goToSignup: () => eventBus.emit(EVENTS.NAVIGATE, { route: 'signup' }),
+        logout: () => appInstance?.logout(),
+        refreshRatings: () => appInstance?.refreshRatings(),
+        getRatingManager: () => appInstance?.getRatingManager(),
+        getCurrentUser: () => appInstance?.getCurrentUser(),
+        isCurrentUserAdmin: () => appInstance?.isCurrentUserAdmin()
+    };
+    
+    // Экспорт только необходимого минимума
+    if (typeof window !== 'undefined') {
+        // Публичное API
+        Object.defineProperty(window, 'musicboardApp', {
+            value: Object.freeze(publicAPI),
+            writable: false,
+            configurable: false
+        });
+        
+        // Debug API только в development
+        const isDev = window.location.hostname === 'localhost' || 
+                     window.location.hostname === '127.0.0.1' || 
+                     window.location.hostname === 'ms2';
+        
+        if (isDev) {
+            Object.defineProperty(window, '__musicboardDebug', {
+                value: Object.freeze({
+                    getAppInstance: () => appInstance,
+                    getEventBus: () => eventBus,
+                    version: '2.0.0'
+                }),
+                writable: false,
+                configurable: false
+            });
+        }
+    }
+})();

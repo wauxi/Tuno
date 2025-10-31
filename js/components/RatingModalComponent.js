@@ -15,12 +15,12 @@ export class RatingModal extends HTMLElement {
         this.render();
         this.attachEventListeners();
         
-        setTimeout(() => {
+        requestAnimationFrame(() => {
             const modal = this.querySelector('.rating-modal');
             if (modal) {
                 modal.classList.add('show');
             }
-        }, 10);
+        });
     }
     
     disconnectedCallback() {
@@ -291,9 +291,11 @@ export class RatingModal extends HTMLElement {
             composed: true
         }));
         
-        setTimeout(() => {
+        modal.addEventListener('transitionend', () => {
             this.remove();
-        }, 300);
+        }, { once: true });
+        
+        setTimeout(() => this.remove(), 350);
     }
     
     setRating(ratingData) {

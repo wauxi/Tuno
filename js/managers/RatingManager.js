@@ -1,15 +1,12 @@
 import { RatingUtils } from '../utils/RatingUtils.js';
 import { UI } from '../config/constants.js';
 import { eventBus, EVENTS } from '../utils/EventBus.js';
+import { getCurrentUserId, isUserLoggedIn } from '../utils/authUtils.js';
 
 export class RatingManager {
     constructor() {
         this.apiUrl = 'php/ratings-api.php';
-        this.currentUserId = this.getCurrentUserId();
-    }
-
-    getCurrentUserId() {
-        return localStorage.getItem('currentUserId') || 1;
+        this.currentUserId = getCurrentUserId();
     }
 
     async addRating(albumId, ratingData) {
@@ -101,8 +98,7 @@ export class RatingManager {
     }
 
     isUserLoggedIn() {
-        const currentUser = localStorage.getItem('currentUser');
-        return currentUser && currentUser !== 'null';
+        return isUserLoggedIn();
     }
 
     generateStarRating(currentRating) {
