@@ -1,3 +1,5 @@
+import { RatingUtils } from '../utils/RatingUtils.js';
+
 export class AlbumGrid {
     constructor({ container, dataType, dataService, template = 'album-item' }) {
         this.container = container;
@@ -60,7 +62,7 @@ export class AlbumGrid {
             album_id: albumId
         };
         
-        const starsHtml = this.generateStarRating(rating);
+        const starsHtml = RatingUtils.generateStarRating(rating, true);
         
         return `
             <li class="recently__item" 
@@ -141,30 +143,6 @@ export class AlbumGrid {
                 </div>
             </li>
         `;
-    }
-
-    
-    generateStarRating(currentRating) {
-        const fiveStarRating = currentRating / 2; // Убираем Math.round()
-        
-        if (fiveStarRating === 0) {
-            return '<span class="no-rating">Нет оценки</span>';
-        }
-
-        let starsHtml = '';
-        for (let i = 1; i <= 5; i++) {
-            if (i <= Math.floor(fiveStarRating)) {
-                starsHtml += `<span class="star star--full">★</span>`;
-            } else if (i <= fiveStarRating + 0.5) {
-                starsHtml += `<span class="star star--half">
-                    <span class="star-half-bg">★</span>
-                    <span class="star-half-fill">★</span>
-                </span>`;
-            } else {
-                starsHtml += `<span class="star star--empty">★</span>`;
-            }
-        }
-        return starsHtml;
     }
 
     getCoverUrl(album) {

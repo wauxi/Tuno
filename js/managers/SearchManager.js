@@ -1,3 +1,5 @@
+import { UI } from '../config/constants.js';
+
 export class SearchManager {
     constructor(ratingManager) {
         this.ratingManager = ratingManager;
@@ -6,7 +8,7 @@ export class SearchManager {
         this.searchResults = null;
         this.searchTimeout = null;
         
-        setTimeout(() => this.init(), 100);
+        setTimeout(() => this.init(), UI.INIT_DELAY);
     }
     
     init() {
@@ -42,7 +44,7 @@ export class SearchManager {
             
             this.searchTimeout = setTimeout(() => {
                 this.performSearch(query);
-            }, 200);
+            }, UI.SEARCH_DEBOUNCE);
         });
         
         document.addEventListener('click', (e) => {
@@ -148,7 +150,7 @@ export class SearchManager {
                 // Нет существующей оценки
             }
             
-            this.ratingManager.showRatingModal({
+            this.ratingManager.showRatingModalComponent({
                 id: albumData.id,
                 album_name: albumData.album_name,
                 artist: albumData.artist,

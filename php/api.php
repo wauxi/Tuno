@@ -1,32 +1,20 @@
 <?php
 define('SECURE_ACCESS', true);
 require_once 'auth-functions.php';
+require_once 'Database.php';
+require_once 'spotify-helper.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
-require_once 'spotify-helper.php';
-
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
 
-$host = 'localhost';
-$dbname = 'musicboard';
-$username = 'root';
-$password = '';
-
-try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    createCoverCacheTable($pdo);
-} catch(PDOException $e) {
-    http_response_code(500);
-    echo json_encode(['error' => 'Ошибка подключения к базе данных: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
-    exit;
-}
+$pdo = Database::getInstance()->getConnection();
+createCoverCacheTable($pdo);
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['action'] === 'search') {
     error_log("=== ПОИСК АЛЬБОМОВ ===");
