@@ -1,0 +1,9 @@
+# Блокировать выполнение PHP файлов
+<FilesMatch "\.(php|phtml|php3|php4|php5|phps|pht|phar)$">
+    Deny from all
+</FilesMatch>
+
+# Разрешить только изображения
+<FilesMatch "\.(jpg|jpeg|png|gif|webp)$">
+    Allow from all
+</FilesMatch>

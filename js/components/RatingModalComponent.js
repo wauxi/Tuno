@@ -56,17 +56,17 @@ export class RatingModal extends HTMLElement {
                             <div class="album-info__cover">
                                 <img src="${coverUrl}" alt="${albumName}">
                             </div>
+                        </div>
+                        
+                        <div class="rating-modal__right">
                             <div class="album-info__details">
                                 <h4>${albumName}</h4>
                                 <p>${artist} • Album</p>
                             </div>
-                        </div>
-                        
-                        <div class="rating-modal__right">
                             <form class="rating-form">
                                 <div class="rating-row">
                                     <div class="rating-group">
-                                        <label>Rating</label>
+                                        <h4 class="rating-form__h4">Rating</h4>
                                         <div class="rating-selector">
                                             ${this.generateStars()}
                                         </div>
@@ -75,14 +75,14 @@ export class RatingModal extends HTMLElement {
 
                                     <div class="checkbox-group">
                                         <div class="checkbox-section">
-                                            <h4>Must listen</h4>
+                                            <h4 class="rating-form__h4">Must listen</h4>
                                             <label class="checkbox-item">
                                                 <input type="checkbox" id="mustListen" name="must_listen">
                                                 <span>Все должны это послушать</span>
                                             </label>
                                         </div>
                                         <div class="checkbox-section">
-                                            <h4>Would re-listen</h4>
+                                            <h4 class="rating-form__h4">Would re-listen</h4>
                                             <label class="checkbox-item">
                                                 <input type="checkbox" id="wouldRelisten" name="would_relisten">
                                                 <span>Переслушал бы</span>
@@ -91,7 +91,7 @@ export class RatingModal extends HTMLElement {
                                     </div>
 
                                     <div class="date-group">
-                                        <label for="listenedAt">Listened at</label>
+                                        <h4 class="rating-form__h4" for="listenedAt">Listened at</h4>
                                         <input type="date" id="listenedAt" name="listened_date" value="${this.getTodayDate()}">
                                     </div>
                                 </div>

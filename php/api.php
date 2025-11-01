@@ -3,6 +3,7 @@ define('SECURE_ACCESS', true);
 require_once 'auth-functions.php';
 require_once 'Database.php';
 require_once 'spotify-helper.php';
+require_once 'CoverService.php';
 require_once 'InputValidator.php';
 require_once 'Logger.php';
 
@@ -20,7 +21,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 $pdo = Database::getInstance()->getConnection();
-createCoverCacheTable($pdo);
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['action'] === 'search') {
     Logger::apiRequest('GET', '/api.php?action=search', ['query' => $_GET['q'] ?? '']);
@@ -74,10 +74,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         
         error_log("Recent Activity найдено записей: " . count($recentResults));
         
+        $coverService = new CoverService($pdo);
         $recentActivity = [];
+        
         foreach ($recentResults as $row) {
-            $albumId = getSpotifyAlbumId($row['spotify_link']);
-            $coverUrl = $albumId ? getSpotifyCoverUrlWithCache($albumId, $pdo) : null;
+            $coverUrl = $coverService->getCoverUrl($row['album_id'], [
+                'spotify_link' => $row['spotify_link'],
+                'artist' => $row['artist'],
+                'album_name' => $row['album_name']
+            ]);
             
             $recentActivity[] = [
                 'album_name' => $row['album_name'],
@@ -121,8 +126,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         
         $listenLater = [];
         foreach ($listenLaterResults as $row) {
-            $albumId = getSpotifyAlbumId($row['spotify_link']);
-            $coverUrl = $albumId ? getSpotifyCoverUrlWithCache($albumId, $pdo) : null;
+            $coverUrl = $coverService->getCoverUrl($row['album_id'], [
+                'spotify_link' => $row['spotify_link'],
+                'artist' => $row['artist'],
+                'album_name' => $row['album_name']
+            ]);
             
             $listenLater[] = [
                 'album_name' => $row['album_name'],
@@ -263,14 +271,13 @@ function handleSearchAlbums() {
             'execution_time' => $executionTime . 'ms'
         ]);
         
+        $coverService = new CoverService($pdo);
         foreach ($albums as &$album) {
-            $albumId = getSpotifyAlbumId($album['spotify_link']);
-            
-            if ($albumId) {
-                $album['coverUrl'] = getSpotifyCoverUrlWithCache($albumId, $pdo);
-            } else {
-                $album['coverUrl'] = null;
-            }
+            $album['coverUrl'] = $coverService->getCoverUrl($album['id'], [
+                'spotify_link' => $album['spotify_link'],
+                'artist' => $album['artist'],
+                'album_name' => $album['album_name']
+            ]);
             
             if (!$album['coverUrl']) {
                 $album['coverUrl'] = 'https://via.placeholder.com/150x150/1a1a1a/ffffff?text=' . 

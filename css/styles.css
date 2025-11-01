@@ -213,8 +213,8 @@ svg * {
   --color-gray: #2D2D2D;
   --color-medium: #252525;
   --color-light: #E4E6EA;
-  --color-light-secondary: #aaa;
-  --color-muted: #888;
+  --color-light-secondary: #7a7a7a;
+  --color-muted: #555555;
   --color-accent: #96010e;
   --border: 1px solid var(--color-gray);
   --border-radius: 14px;
@@ -256,7 +256,8 @@ svg * {
   display: flex;
   justify-content: center;
   align-items: center;
-  column-gap: 15px;
+  -moz-column-gap: 15px;
+       column-gap: 15px;
   width: 100%;
   position: relative;
 }
@@ -329,6 +330,10 @@ svg * {
   border: none;
   outline: none;
 }
+.navigation__search-input::-moz-placeholder {
+  color: var(--color-light);
+  opacity: 0.5;
+}
 .navigation__search-input::placeholder {
   color: var(--color-light);
   opacity: 0.5;
@@ -395,7 +400,8 @@ svg * {
   width: 50px;
   height: 50px;
   border-radius: 4px;
-  object-fit: cover;
+  -o-object-fit: cover;
+     object-fit: cover;
   flex-shrink: 0;
   background: var(--color-medium);
 }
@@ -455,7 +461,8 @@ svg * {
   display: flex;
   flex-direction: row;
   align-items: flex-start;
-  column-gap: 20px;
+  -moz-column-gap: 20px;
+       column-gap: 20px;
   padding-block: var(--info-padding-y);
 }
 .info__profile img {
@@ -625,7 +632,8 @@ svg * {
   border-radius: var(--border-radius-small);
   border: var(--border);
   flex-shrink: 0;
-  object-fit: cover;
+  -o-object-fit: cover;
+     object-fit: cover;
   transition: opacity 0.2s ease;
 }
 .listen-later__cover:hover {
@@ -746,7 +754,9 @@ svg * {
   font-size: 2rem;
   cursor: pointer;
   transition: all 0.2s ease;
-  user-select: none;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
   line-height: 1;
   display: inline-block;
 }
@@ -979,7 +989,8 @@ rating-modal {
   position: absolute;
   inset: 0;
   background-color: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+          backdrop-filter: blur(4px);
 }
 .rating-modal__content {
   position: relative;
@@ -1051,19 +1062,17 @@ rating-modal {
 .album-info__cover img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-}
-.album-info__details {
-  text-align: center;
+  -o-object-fit: cover;
+     object-fit: cover;
 }
 .album-info__details h4 {
-  margin: 0 0 8px 0;
-  font-size: 18px;
+  margin: 0 0 2px 0;
+  font-size: 24px;
   font-weight: 600;
 }
 .album-info__details p {
   color: var(--color-light-secondary);
-  font-size: 14px;
+  font-size: 18px;
   margin: 0;
 }
 
@@ -1071,6 +1080,11 @@ rating-modal {
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+.rating-form__h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
 }
 .rating-form .rating-row {
   display: flex;
@@ -1084,17 +1098,18 @@ rating-modal {
 .rating-form .input-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 5px;
 }
 .rating-form .rating-selector {
   display: flex;
-  gap: 8px;
 }
 .rating-form .rating-selector .star {
-  font-size: 32px;
+  font-size: 38px;
   cursor: pointer;
   transition: all 0.2s;
-  user-select: none;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
   color: #333;
   position: relative;
 }
@@ -1149,7 +1164,9 @@ rating-modal {
   cursor: pointer;
   margin: 0;
   flex-shrink: 0;
-  appearance: none;
+  -webkit-appearance: none;
+     -moz-appearance: none;
+          appearance: none;
   background-color: transparent;
   border: 2px solid var(--color-gray);
   border-radius: var(--border-radius-small);
@@ -1176,8 +1193,10 @@ rating-modal {
 .rating-form .checkbox-group .checkbox-section .checkbox-item span {
   cursor: pointer;
   margin: 0;
-  user-select: none;
-  font-size: 14px;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+  font-size: 16px;
   color: var(--color-light-secondary);
   line-height: 1.4;
 }
@@ -1187,7 +1206,7 @@ rating-modal {
   background-color: var(--color-dark);
   border: var(--border);
   border-radius: var(--border-radius);
-  font-size: 14px;
+  font-size: 16px;
   width: 140px;
 }
 .rating-form input[type=date]:focus {
@@ -1206,6 +1225,9 @@ rating-modal {
 .rating-form input[type=text]:focus,
 .rating-form textarea:focus {
   outline: none;
+}
+.rating-form input[type=text]::-moz-placeholder, .rating-form textarea::-moz-placeholder {
+  color: var(--color-light-secondary);
 }
 .rating-form input[type=text]::placeholder,
 .rating-form textarea::placeholder {
@@ -1335,7 +1357,8 @@ rating-modal {
 
 @media screen and (max-width: 580px) {
   .navigation__inner {
-    column-gap: 5px;
+    -moz-column-gap: 5px;
+         column-gap: 5px;
   }
   .navigation__search {
     width: 40px;
@@ -1383,6 +1406,4 @@ rating-modal {
   .search-result__artist {
     font-size: 11px;
   }
-}
-
-/*# sourceMappingURL=styles.css.map */
+}/*# sourceMappingURL=styles.css.map */
