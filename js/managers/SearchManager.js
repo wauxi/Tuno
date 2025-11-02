@@ -8,17 +8,105 @@ export class SearchManager {
         this.searchContainer = null;
         this.searchResults = null;
         this.searchTimeout = null;
+        this.searchModal = null;
+        this.searchModalInput = null;
+        this.searchModalResults = null;
+        this.isMobile = window.innerWidth <= 580;
         
         this.init();
+        this.setupResizeListener();
+    }
+    
+    setupResizeListener() {
+        window.addEventListener('resize', () => {
+            this.isMobile = window.innerWidth <= 580;
+        });
     }
     
     init() {
         this.searchInput = document.querySelector('.navigation__search-input');
         this.searchContainer = document.querySelector('.navigation__search');
+        this.searchModal = document.querySelector('.search-modal');
+        this.searchModalInput = document.querySelector('.search-modal__input');
+        this.searchModalResults = document.querySelector('.search-modal__results');
         
         if (this.searchInput && this.searchContainer) {
             this.createSearchResults();
             this.bindEvents();
+        }
+        
+        if (this.searchModal) {
+            this.bindModalEvents();
+        }
+    }
+    
+    bindModalEvents() {
+        const closeBtn = this.searchModal.querySelector('.search-modal__close');
+        const overlay = this.searchModal.querySelector('.search-modal__overlay');
+        
+        // Открытие модалки при клике на кнопку поиска на мобильных
+        this.searchContainer.addEventListener('click', (e) => {
+            if (this.isMobile && !e.target.closest('.navigation__search-input')) {
+                this.openModal();
+            }
+        });
+        
+        // Закрытие модалки
+        closeBtn?.addEventListener('click', () => this.closeModal());
+        overlay?.addEventListener('click', () => this.closeModal());
+        
+        // Поиск в модалке
+        this.searchModalInput?.addEventListener('input', (e) => {
+            const query = e.target.value.trim();
+            
+            if (this.searchTimeout) {
+                clearTimeout(this.searchTimeout);
+            }
+            
+            if (query.length < 2) {
+                this.searchModalResults.innerHTML = '';
+                return;
+            }
+            
+            this.searchTimeout = setTimeout(() => {
+                this.performModalSearch(query);
+            }, UI.SEARCH_DEBOUNCE);
+        });
+        
+        // Закрытие по ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.searchModal?.classList.contains('active')) {
+                this.closeModal();
+            }
+        });
+    }
+    
+    openModal() {
+        if (this.searchModal) {
+            this.searchModal.classList.add('active');
+            this.searchModal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            
+            // Фокус на поле ввода
+            setTimeout(() => {
+                this.searchModalInput?.focus();
+            }, 100);
+        }
+    }
+    
+    closeModal() {
+        if (this.searchModal) {
+            this.searchModal.classList.remove('active');
+            this.searchModal.style.display = 'none';
+            document.body.style.overflow = '';
+            
+            // Очистка
+            if (this.searchModalInput) {
+                this.searchModalInput.value = '';
+            }
+            if (this.searchModalResults) {
+                this.searchModalResults.innerHTML = '';
+            }
         }
     }
     
@@ -59,6 +147,73 @@ export class SearchManager {
                 this.showResults();
             }
         });
+    }
+    
+    async performModalSearch(query) {
+        try {
+            const url = `php/api.php?action=search&q=${encodeURIComponent(query)}`;
+            
+            const response = await fetch(url);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                this.displayModalResults(data.albums, query);
+            } else {
+                this.showModalError('Ошибка поиска: ' + (data.error || 'Неизвестная ошибка'));
+            }
+        } catch (error) {
+            this.showModalError('Ошибка соединения');
+        }
+    }
+    
+    displayModalResults(albums, query) {
+        if (albums.length === 0) {
+            this.searchModalResults.innerHTML = `
+                <div class="search-results__empty">
+                    <span class="search-results__icon">🔍</span>
+                    <p>Ничего не найдено для "${query}"</p>
+                </div>
+            `;
+        } else {
+            const resultsHtml = albums.map(album => this.getAlbumResultTemplate(album)).join('');
+            this.searchModalResults.innerHTML = `
+                <div class="search-results__header">
+                    Результаты поиска (${albums.length})
+                </div>
+                <div class="search-results__list">
+                    ${resultsHtml}
+                </div>
+            `;
+            
+            this.bindModalResultEvents();
+        }
+    }
+    
+    bindModalResultEvents() {
+        const results = this.searchModalResults.querySelectorAll('.search-result');
+        
+        results.forEach(result => {
+            result.addEventListener('click', () => {
+                this.handleRateAlbum(result);
+                this.closeModal();
+            });
+        });
+    }
+    
+    showModalError(message) {
+        if (this.searchModalResults) {
+            this.searchModalResults.innerHTML = `
+                <div class="search-results__error">
+                    <span class="search-results__icon">⚠️</span>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
     }
     
     async performSearch(query) {

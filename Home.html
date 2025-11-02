@@ -31,6 +31,32 @@
         </div>
       </div>
 
+      <div class="search-modal" style="display: none;">
+        <div class="search-modal__overlay"></div>
+        <div class="search-modal__content">
+          <div class="search-modal__header">
+            <button class="search-modal__close" aria-label="Close search">×</button>
+          </div>
+          <div class="search-modal__search">
+            <span class="search-modal__search-icon">
+              <svg width="20" height="20" viewBox="0 0 488.4 488.4" xmlns="http://www.w3.org/2000/svg">
+                <g stroke="none" stroke-width="1" fill="#000000" fill-rule="nonzero">
+                  <path d="M203.2,406.45c-112,0-203.2-91.1-203.2-203.2s91.2-203.2,203.2-203.2s203.2,91.2,203.2,203.2c0,51.7-19.4,98.8-51.2,134.7
+                  l129.6,129.5c4.8,4.8,4.8,12.5,0,17.3c-2.4,2.4-5.5,3.6-8.7,3.6s-6.3-1.2-8.7-3.6l-129.5-129.5
+                  C302,387.05,254.8,406.45,203.2,406.45z M203.2,24.55c-98.5,0-178.7,80.2-178.7,178.7s80.2,178.7,178.7,178.7
+                  s178.7-80.2,178.7-178.7S301.7,24.55,203.2,24.55z"/>
+                </g>
+              </svg>
+            </span>
+            <input class="search-modal__input" type="text" placeholder="Search albums..." autofocus />
+          </div>
+          <div class="search-modal__results"></div>
+        </div>
+      </div>
+
+
+
+
       <div class="navigation__auth buttons">
         <button type="button" class="navigation__auth-button button"><span>Login</span></button>
         <button type="button" class="navigation__auth-button button"><span>Sign Up</span></button>
@@ -70,24 +96,40 @@
               <h2 class="favs__title title">Favorite Albums</h2>
               <ul class="album-grid favs__list">
                 <li class="favs__item">
-                  <img src="https://i.discogs.com/8aWxQD1RNhWAPVLya1xAai0uNMCO6gStjJtkPuwDpgI/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTU4Nzgy/NzAtMTQwNTE5NzI4/Mi0xMDIwLmpwZWc.jpeg" alt="Album Cover" />
-                  <h3>French Exit</h3>
-                  <p>TV Girl</p>
+                  <div class="favs__cover-container">
+                    <img src="https://i.discogs.com/8aWxQD1RNhWAPVLya1xAai0uNMCO6gStjJtkPuwDpgI/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTU4Nzgy/NzAtMTQwNTE5NzI4/Mi0xMDIwLmpwZWc.jpeg" alt="Album Cover" />
+                  </div>
+                  <div class="favs__info">
+                    <h3 class="favs__album">French Exit</h3>
+                    <p class="favs__artist">TV Girl</p>
+                  </div>
                 </li>
                 <li class="favs__item">
-                  <img src="./img/bush.png" alt="Album Cover" />
-                  <h3>The Dreaming</h3>
-                  <p>Kate Bush</p>
+                  <div class="favs__cover-container">
+                    <img src="./img/bush.png" alt="Album Cover" />
+                  </div>
+                  <div class="favs__info">
+                    <h3 class="favs__album">The Dreaming</h3>
+                    <p class="favs__artist">Kate Bush</p>
+                  </div>
                 </li>
                 <li class="favs__item">
-                  <img src="./img/charli.png" alt="Album Cover" />
-                  <h3>how i'm feeling now</h3>
-                  <p>Charli XCX</p>
+                  <div class="favs__cover-container">
+                    <img src="./img/charli.png" alt="Album Cover" />
+                  </div>
+                  <div class="favs__info">
+                    <h3 class="favs__album">how i'm feeling now</h3>
+                    <p class="favs__artist">Charli XCX</p>
+                  </div>
                 </li>
                 <li class="favs__item">
-                  <img src="./img/sh2_OST.png" alt="Album Cover" />
-                  <h3>Silent Hill 2 OST</h3>
-                  <p>Akira Yamaoka</p>
+                  <div class="favs__cover-container">
+                    <img src="./img/sh2_OST.png" alt="Album Cover" />
+                  </div>
+                  <div class="favs__info">
+                    <h3 class="favs__album">Silent Hill 2 OST</h3>
+                    <p class="favs__artist">Akira Yamaoka</p>
+                  </div>
                 </li>
               </ul>
             </section>

@@ -36,6 +36,12 @@
   }
 }
 
+@mixin table {
+  @media screen and (max-width: 960px) {
+    @content;
+  }
+}
+
 @mixin mobile {
   @media screen and (max-width: 580px) {
     @content;

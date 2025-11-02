@@ -110,7 +110,6 @@ rating-modal {
     height: 200px;
     border-radius: 8px;
     overflow: hidden;
-    margin-bottom: 16px;
 
     img {
       width: 100%;
@@ -168,7 +167,7 @@ rating-modal {
       cursor: pointer;
       transition: all 0.2s;
       user-select: none;
-      color: #333;
+      color: var(--color-muted);
       position: relative;
       
       &.filled {
@@ -176,7 +175,7 @@ rating-modal {
       }
       
       &.half {
-        color: #333;
+        color: var(--color-muted);
         
         &::before {
           content: '★';

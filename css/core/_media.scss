@@ -9,7 +9,14 @@
       height: 40px;
       flex-grow: 0;
       border-radius: var(--border-radius-circle);
-      justify-content: center; 
+      justify-content: center;
+      cursor: pointer;
+      padding: 0;
+      transition: background-color 0.2s;
+
+      &:hover {
+        background-color: var(--color-gray);
+      }
 
       &-input {
         display: none;
@@ -25,10 +32,6 @@
     font-size: 14px;
   }
 
-  .info__navbar {
-    gap: 1px;
-  }
-
   .content__sections {
     grid-template-columns: 1fr;
     gap: var(--content-sections-gap);
@@ -37,6 +40,7 @@
 
   .album-grid {
     grid-template-columns: repeat(2, 1fr);
+    border-radius: 0;
   }
 
   .search-results {
@@ -53,13 +57,36 @@
       &__info {
           margin-left: 10px;
       }
-
-      &__album {
-          font-size: 13px;
-      }
-
-      &__artist {
-          font-size: 11px;
-      }
     }
+
+  .container {
+    padding-inline: 0;
+  }
+
+  .title {
+    padding: var(--container__padding-inline) var(--container__padding-inline) 0 ;
+  }
+
+  .favs__info, .recently__info {
+    gap: var(--gap-little)
+  }
+
+  .info__profile {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 15px;
+  }
+
+}
+
+@include table {
+  .content__sections {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+}
+
+
+@media screen and (max-width: 580px) {
 }
