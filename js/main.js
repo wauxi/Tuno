@@ -8,8 +8,9 @@ import { UserService } from './services/UserService.js';
 import { UIManager } from './components/UIManager.js';
 import { AlbumMenuManager } from './components/AlbumMenuManager.js';
 import { eventBus, EVENTS } from './utils/EventBus.js';
-import { CONFIG, DEFAULTS, UI, ROUTES } from './config/constants.js';
+import { CONFIG, DEFAULTS, UI, ROUTES, TIMEOUTS } from './config/constants.js';
 import { setCurrentUserId } from './utils/authUtils.js';
+import { logger } from './utils/Logger.js';
 import './components/RatingModalComponent.js';
 
 
@@ -31,7 +32,10 @@ class MusicboardApp {
     }
     
     async init() {
+        // Check auth synchronously (reads from localStorage)
         this.authService.checkAuth();
+        
+        // Load users asynchronously
         await this.userService.loadUsers();
         
         this.viewingUserId = this.getUserIdFromUrl() || 
@@ -43,24 +47,32 @@ class MusicboardApp {
         
         new Navigation();
         this.initDataServices();
+        
+        // Load data asynchronously
         await this.loadData();
+        
+        // Update URL (synchronous)
         this.updateUrl();
+        
+        // Setup event delegation (synchronous)
         this.setupEventDelegation();
         
+        // Initialize rating system (synchronous)
         this.initRatingSystem();
+        
         if (this.ratingManager) {
             this.searchManager = new SearchManager(this.ratingManager);
             this.albumMenuManager = new AlbumMenuManager(this.authService, this.ratingManager, this.dataService);
 
             try {
-                await this.waitForElement('.album-menu', 10000);
+                await this.waitForElement('.album-menu', TIMEOUTS.ELEMENT_WAIT);
                 this.albumMenuManager.initAlbumMenus();
             } catch (err) {
-                console.warn('Timed out waiting for .album-menu elements, attempting to init menus anyway');
+                logger.warn('Timed out waiting for .album-menu elements, attempting to init menus anyway');
                 this.albumMenuManager.initAlbumMenus();
             }
         } else {
-            console.error('RatingManager не найден для SearchManager');
+            logger.error('RatingManager not found for SearchManager');
         }
     }
     
@@ -99,7 +111,6 @@ class MusicboardApp {
     
     initDataServices() {
         this.dataService = new DataService({
-            apiUrl: 'http://ms2/php/api.php',
             userId: this.viewingUserId
         });
         
@@ -129,7 +140,6 @@ class MusicboardApp {
         
         eventBus.on(EVENTS.RATING_UPDATED, async (data) => {
             if (data.shouldReload) {
-                // Реактивное обновление данных без перезагрузки страницы
                 await this.refreshData();
             }
             
@@ -140,7 +150,6 @@ class MusicboardApp {
         
         eventBus.on(EVENTS.RATING_DELETED, async (data) => {
             if (data.shouldReload) {
-                // Реактивное обновление данных без перезагрузки страницы
                 await this.refreshData();
             }
         });
@@ -148,22 +157,18 @@ class MusicboardApp {
     
     async refreshData() {
         try {
-            // Принудительно загрузить свежие данные с сервера
             await this.dataService.loadData(true);
             
-            // Обновить UI
             if (this.recentlyGrid) this.recentlyGrid.render();
             if (this.listenLaterGrid) this.listenLaterGrid.render();
             
-            // Переинициализировать меню
             if (this.albumMenuManager) {
                 this.albumMenuManager.initAlbumMenus();
             }
             
-            console.log('✅ Data refreshed successfully without page reload!');
+            logger.success('Data refreshed successfully without page reload');
         } catch (error) {
-            console.error('❌ Error refreshing data:', error);
-            // Fallback: если что-то пошло не так, сделаем reload
+            logger.error('Error refreshing data:', error);
             window.location.reload();
         }
     }
@@ -176,11 +181,11 @@ class MusicboardApp {
             if (this.listenLaterGrid) this.listenLaterGrid.render();
 
         } catch (error) {
-            console.error('Error loading data:', error);
+            logger.error('Error loading data:', error);
         }
     }
 
-    async waitForElement(selector, timeout = 5000) {
+    async waitForElement(selector, timeout = TIMEOUTS.ELEMENT_WAIT) {
         const start = performance.now();
 
         const existing = document.querySelector(selector);
@@ -201,28 +206,10 @@ class MusicboardApp {
                 subtree: true
             });
 
-            const checkFrame = () => {
-                const el = document.querySelector(selector);
-                if (el) {
-                    observer.disconnect();
-                    clearTimeout(timer);
-                    resolve(el);
-                    return;
-                }
-                if (performance.now() - start > timeout) {
-                    observer.disconnect();
-                    reject(new Error(`Element ${selector} not found within ${timeout}ms`));
-                    return;
-                }
-                requestAnimationFrame(checkFrame);
-            };
-
             const timer = setTimeout(() => {
                 observer.disconnect();
                 reject(new Error(`Element ${selector} not found within ${timeout}ms`));
-            }, timeout + 50);
-
-            requestAnimationFrame(checkFrame);
+            }, timeout);
         });
     }
     
@@ -266,20 +253,8 @@ class MusicboardApp {
     
     async refreshRatings() {
         if (this.albumMenuManager) {
-            await this.albumMenuManager.initAlbumMenus();
+            this.albumMenuManager.initAlbumMenus();
         }
-    }
-    
-    getRatingManager() {
-        return this.ratingManager;
-    }
-    
-    getCurrentUser() {
-        return this.authService.getCurrentUser();
-    }
-    
-    isCurrentUserAdmin() {
-        return this.authService.isAdmin();
     }
 }
 

@@ -49,6 +49,39 @@ export class AlbumGrid {
     }
 
     getAlbumTemplate(album) {
+        return this.getTemplate(album, {
+            itemClass: 'recently__item',
+            coverClass: 'recently__cover',
+            menuActions: [
+                { action: 'write-review', icon: '✍️', label: album.rating ? 'Edit review' : 'Write review', class: 'write' },
+                { action: 'go-to-album', icon: '🎵', label: 'Go to album', class: 'spotify' }
+            ]
+        });
+    }
+
+    getListenLaterTemplate(album) {
+        return this.getTemplate(album, {
+            itemClass: 'listen-later__item',
+            coverClass: 'listen-later__cover',
+            coverSize: '50x50',
+            menuPosition: 'side',
+            menuActions: [
+                { action: 'write-review', icon: '✍️', label: 'Write review', class: 'write' },
+                { action: 'remove-listen-later', icon: '❌', label: 'Remove from Listen Later', class: 'remove' },
+                { action: 'go-to-album', icon: '🎵', label: 'Go to album', class: 'spotify' }
+            ]
+        });
+    }
+
+    getTemplate(album, options) {
+        const {
+            itemClass,
+            coverClass,
+            coverSize = '150x150',
+            menuPosition = '',
+            menuActions = []
+        } = options;
+        
         const coverUrl = this.getCoverUrl(album);
         const albumName = album.album_name || album.albumName || 'Unknown Album';
         const artist = album.artist || 'Unknown Artist';
@@ -62,87 +95,66 @@ export class AlbumGrid {
             album_id: albumId
         };
         
-        const starsHtml = RatingUtils.generateStarRating(rating, true);
+        const starsHtml = rating ? RatingUtils.generateStarRating(rating, true) : '';
+        const placeholderUrl = `https://via.placeholder.com/${coverSize}/333/666?text=No+Image`;
+        
+        const menuClass = menuPosition ? `album-menu album-menu--${menuPosition}` : 'album-menu';
+        const menuHtml = menuActions.map(({ action, icon, label, class: itemClass }) => 
+            `<button class="album-menu__item album-menu__item--${itemClass}" data-action="${action}">
+                <span class="album-menu__icon">${icon}</span>
+                ${label}
+            </button>`
+        ).join('');
         
         return `
-            <li class="recently__item" 
+            <li class="${itemClass}" 
                 data-album-id="${albumId}" 
                 data-spotify-link="${spotifyLink}"
-                data-rating-data='${JSON.stringify(ratingData)}'>
+                ${rating ? `data-rating-data='${JSON.stringify(ratingData)}'` : ''}>
+                ${itemClass === 'recently__item' ? `
                 <div class="recently__cover-container">
                     <img src="${coverUrl}" 
                         alt="${albumName}" 
-                        class="recently__cover" 
+                        class="${coverClass}" 
                         loading="lazy"
                         decoding="async"
-                        onerror="this.src='https://via.placeholder.com/150x150/333/666?text=No+Image'"
+                        onerror="this.src='${placeholderUrl}'"
                         onload="this.classList.add('loaded')">
-                    <div class="album-menu">
+                    <div class="${menuClass}">
                         <button class="album-menu__trigger" type="button">
                             <span class="album-menu__dots"></span>
                         </button>
                         <div class="album-menu__dropdown">
-                            <button class="album-menu__item album-menu__item--write" data-action="write-review">
-                                <span class="album-menu__icon">✍️</span>
-                                ${rating ? 'Edit review' : 'Write review'}
-                            </button>
-                            <button class="album-menu__item album-menu__item--spotify" data-action="go-to-album">
-                                <span class="album-menu__icon">🎵</span>
-                                Go to album
-                            </button>
+                            ${menuHtml}
                         </div>
                     </div>
                 </div>
                 <div class="recently__info">
                     <h3 class="recently__album">${albumName}</h3>
                     <p class="recently__artist">${artist}</p>
-                    <div class="recently__rating">
-                        ${starsHtml}
-                    </div>
+                    ${starsHtml ? `<div class="recently__rating">${starsHtml}</div>` : ''}
                 </div>
-            </li>
-        `;
-    }
-
-    getListenLaterTemplate(album) {
-        const coverUrl = this.getCoverUrl(album);
-        const albumName = album.album_name || album.albumName || 'Unknown Album';
-        const artist = album.artist || 'Unknown Artist';
-        const albumId = album.album_id || album.id || 0;
-        const spotifyLink = album.spotify_link || '';
-            
-        return `
-            <li class="listen-later__item" data-album-id="${albumId}" data-spotify-link="${spotifyLink}">
+                ` : `
                 <img src="${coverUrl}" 
                     alt="${albumName}" 
-                    class="listen-later__cover" 
+                    class="${coverClass}" 
                     loading="lazy"
                     decoding="async"
-                    onerror="this.src='https://via.placeholder.com/50x50/333/666?text=No+Image'"
+                    onerror="this.src='${placeholderUrl}'"
                     onload="this.classList.add('loaded')">
                 <div class="listen-later__info">
                     <h3 class="listen-later__album">${albumName}</h3>
                     <p class="listen-later__artist">${artist}</p>
                 </div>
-                <div class="album-menu album-menu--side">
+                <div class="${menuClass}">
                     <button class="album-menu__trigger" type="button">
                         <span class="album-menu__dots"></span>
                     </button>
                     <div class="album-menu__dropdown">
-                        <button class="album-menu__item album-menu__item--write" data-action="write-review">
-                            <span class="album-menu__icon">✍️</span>
-                            Write review
-                        </button>
-                        <button class="album-menu__item album-menu__item--remove" data-action="remove-listen-later">
-                            <span class="album-menu__icon">❌</span>
-                            Remove from Listen Later
-                        </button>
-                        <button class="album-menu__item album-menu__item--spotify" data-action="go-to-album">
-                            <span class="album-menu__icon">🎵</span>
-                            Go to album
-                        </button>
+                        ${menuHtml}
                     </div>
                 </div>
+                `}
             </li>
         `;
     }

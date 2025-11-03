@@ -1,4 +1,5 @@
 import { getCurrentUserData, clearCurrentUser } from '../utils/authUtils.js';
+import { logger } from '../utils/Logger.js';
 
 export class AuthService {
     constructor() {
@@ -25,7 +26,7 @@ export class AuthService {
             
             await response.json();
         } catch (error) {
-            console.error('Logout error:', error);
+            logger.error('Logout error:', error);
         } finally {
             this.currentUser = null;
             this.isLoggedIn = false;

@@ -1,4 +1,5 @@
 import { UI } from '../config/constants.js';
+import { logger } from '../utils/Logger.js';
 
 export class AlbumMenuManager {
     constructor(authService, ratingManager, dataService) {
@@ -106,7 +107,7 @@ export class AlbumMenuManager {
             }
             return null;
         } catch (error) {
-            console.error('Error fetching existing rating:', error);
+            logger.error('Error fetching existing rating:', error);
             return null;
         }
     }

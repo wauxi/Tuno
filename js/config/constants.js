@@ -1,21 +1,22 @@
 // Application Configuration Constants
+import { ENVIRONMENT, TIMEOUTS, CACHE_CONSTANTS } from './environment.js';
 
 export const CONFIG = {
     // API Configuration
     API: {
-        BASE_URL: 'php',
+        BASE_URL: ENVIRONMENT.API_BASE_URL,
         ENDPOINTS: {
             MAIN: 'api.php',
             AUTH: 'auth-api.php',
             RATINGS: 'ratings-api.php',
             USERS: 'get-users.php',
         },
-        TIMEOUT: 30000, // 30 seconds
+        TIMEOUT: TIMEOUTS.API_REQUEST,
     },
     
     // Cache Configuration
     CACHE: {
-        LIFETIME: 60 * 60 * 1000, // 1 hour in milliseconds
+        LIFETIME: CACHE_CONSTANTS.USER_DATA_TTL,
         KEYS: {
             RECENT_ACTIVITY: 'recentActivity',
             LISTEN_LATER: 'listenLater',
@@ -27,20 +28,20 @@ export const CONFIG = {
     
     // Default Values
     DEFAULTS: {
-        USER_ID: 4, // Default viewing user
-        GUEST_USER_ID: 1, // Guest user
+        USER_ID: 4,
+        GUEST_USER_ID: 1,
         ITEMS_PER_PAGE: 20,
         COVER_PLACEHOLDER: 'img/default-cover.png',
     },
     
     // UI Timing (milliseconds)
     UI: {
-        SEARCH_DEBOUNCE: 300, // Debounce delay for search input
-        ANIMATION_DURATION: 300, // CSS transition duration
-        MODAL_SHOW_DELAY: 10, // Delay before showing modal animation
-        INIT_DELAY: 100, // Delay for component initialization
-        NOTIFICATION_DURATION: 5000, // Toast notification display time
-        RATING_LOAD_DELAY: 100, // Delay before loading rating in modal
+        SEARCH_DEBOUNCE: TIMEOUTS.SEARCH_DEBOUNCE,
+        ANIMATION_DURATION: TIMEOUTS.ANIMATION,
+        MODAL_SHOW_DELAY: TIMEOUTS.MODAL_SHOW,
+        INIT_DELAY: TIMEOUTS.INIT_DELAY,
+        NOTIFICATION_DURATION: TIMEOUTS.NOTIFICATION,
+        RATING_LOAD_DELAY: TIMEOUTS.RATING_LOAD,
     },
     
     // Routes
@@ -76,9 +77,12 @@ export const CONFIG = {
         ENABLE_SEARCH: true,
         ENABLE_CACHE: true,
         ENABLE_NOTIFICATIONS: true,
-        DEBUG_MODE: false,
+        DEBUG_MODE: ENVIRONMENT.DEBUG_MODE,
     }
 };
+
+// Export environment
+export { ENVIRONMENT, TIMEOUTS, CACHE_CONSTANTS };
 
 // Helper functions to get config values
 export const getApiUrl = (endpoint) => {

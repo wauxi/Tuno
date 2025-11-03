@@ -1,12 +1,14 @@
 import { CACHE_CONFIG, cacheManager } from '../utils/CacheManager.js';
+import { CONFIG } from '../config/constants.js';
+import { errorHandler } from '../utils/ErrorHandler.js';
+import { logger } from '../utils/Logger.js';
 
 export class DataService {
     constructor({ apiUrl, userId }) {
-        this.apiUrl = apiUrl || 'http://ms2/php/api.php';
+        this.apiUrl = apiUrl || `${CONFIG.API.BASE_URL}/${CONFIG.API.ENDPOINTS.MAIN}`;
         this.userId = userId;
         this.cacheManager = cacheManager;
         
-        // Ключи кэша с префиксом пользователя
         this.cacheKey = `user_${userId}_data`;
         
         this.data = {
@@ -16,7 +18,9 @@ export class DataService {
         };
     }
     
-    async fetchFromApi() {
+    async fetchFromApi(retryCount = 0) {
+        const MAX_RETRIES = 3;
+        
         try {
             const url = this.userId ? 
                 `${this.apiUrl}?user_id=${this.userId}` : 
@@ -27,25 +31,39 @@ export class DataService {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                cache: 'no-cache'
+                cache: 'no-cache',
+                signal: AbortSignal.timeout(CONFIG.API.TIMEOUT)
             });
             
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
             
             const data = await response.json();
             
             return data;
         } catch (error) {
-            console.error('❌ Ошибка при загрузке данных:', error);
+            await errorHandler.handleApiError(error, { 
+                url: this.apiUrl, 
+                userId: this.userId, 
+                attempt: retryCount + 1 
+            });
+            
+            // Retry logic
+            if (retryCount < MAX_RETRIES) {
+                const delay = Math.min(1000 * Math.pow(2, retryCount), 5000);
+                logger.info(`Retrying in ${delay}ms...`);
+                await new Promise(resolve => setTimeout(resolve, delay));
+                return this.fetchFromApi(retryCount + 1);
+            }
+            
             throw error;
         }
     }
     
     async loadData(forceRefresh = false) {
         try {
-            // Попытаться загрузить из кэша
+            // Attempt to load from cache
             if (!forceRefresh) {
                 const cachedData = this.cacheManager.get(this.cacheKey);
                 
@@ -56,13 +74,13 @@ export class DataService {
                         return this.loadData(true);
                     }
                     
-                    console.log('📦 Data loaded from cache');
+                    logger.info('Data loaded from cache');
                     return this.data;
                 }
             }
             
-            // Загрузить с сервера
-            console.log('🌐 Loading data from server...');
+            // Load from server with retry logic
+            logger.info('Loading data from server...');
             const serverData = await this.fetchFromApi();
             
             if (serverData && serverData.success) {
@@ -70,35 +88,40 @@ export class DataService {
                 this.data.listenLater = serverData.listenLater || [];
                 this.data.albums = serverData.albums || [];
                 
-                // Сохранить в кэш
+                // Save to cache
                 this.cacheManager.set(
                     this.cacheKey, 
                     this.data, 
                     CACHE_CONFIG.TTL.USER_DATA
                 );
                 
-                console.log('✅ Data loaded and cached');
+                logger.success('Data loaded and cached');
                 return this.data;
             } else {
-                throw new Error('Сервер вернул некорректные данные');
+                throw new Error('Server returned invalid data');
             }
             
         } catch (error) {
-            console.error('❌ Ошибка загрузки данных:', error);
+            await errorHandler.handleApiError(error, { 
+                userId: this.userId, 
+                forceRefresh 
+            });
             
-            // Fallback на кэш даже если устарел
+            // Fallback to stale cache on error
             const staleCache = localStorage.getItem(this.cacheKey);
             if (staleCache) {
                 try {
                     const parsed = JSON.parse(staleCache);
                     this.data = parsed.value;
-                    console.warn('⚠️ Using stale cache due to error');
+                    logger.warn('Using stale cache due to error');
+                    errorHandler.notifyUser('Using cached data', 'warning');
                     return this.data;
                 } catch (e) {
-                    // Ignore parse errors
+                    logger.error('Failed to parse stale cache:', e);
                 }
             }
             
+            // Return empty data as last resort
             this.data = {
                 recentActivity: [],
                 listenLater: [],
@@ -109,9 +132,6 @@ export class DataService {
         }
     }
     
-    /**
-     * Инвалидировать кэш
-     */
     clearCache() {
         return this.cacheManager.invalidateUserCache(this.userId);
     }

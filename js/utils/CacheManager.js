@@ -1,7 +1,9 @@
 /**
  * Unified Cache Manager
- * Единая стратегия кэширования для всего приложения
+ * Единая стратегия кэширования для всего приложения - только localStorage
  */
+
+import { logger } from './Logger.js';
 
 const CACHE_CONFIG = {
     // TTL для разных типов данных
@@ -22,7 +24,7 @@ const CACHE_CONFIG = {
 
 export class CacheManager {
     constructor() {
-        this.storage = localStorage;
+        this.storage = localStorage; // Только localStorage, никакого sessionStorage
     }
     
     /**
@@ -39,7 +41,7 @@ export class CacheManager {
             this.storage.setItem(key, JSON.stringify(item));
             return true;
         } catch (error) {
-            console.error(`Cache set error for key ${key}:`, error);
+            logger.error(`Cache set error for key ${key}:`, error);
             return false;
         }
     }
@@ -63,7 +65,7 @@ export class CacheManager {
             
             return item.value;
         } catch (error) {
-            console.error(`Cache get error for key ${key}:`, error);
+            logger.error(`Cache get error for key ${key}:`, error);
             return null;
         }
     }
@@ -83,7 +85,7 @@ export class CacheManager {
             this.storage.removeItem(key);
             return true;
         } catch (error) {
-            console.error(`Cache delete error for key ${key}:`, error);
+            logger.error(`Cache delete error for key ${key}:`, error);
             return false;
         }
     }
@@ -101,7 +103,7 @@ export class CacheManager {
             });
             return true;
         } catch (error) {
-            console.error(`Cache clear by prefix error:`, error);
+            logger.error(`Cache clear by prefix error:`, error);
             return false;
         }
     }

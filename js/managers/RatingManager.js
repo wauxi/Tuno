@@ -2,6 +2,7 @@ import { RatingUtils } from '../utils/RatingUtils.js';
 import { UI } from '../config/constants.js';
 import { eventBus, EVENTS } from '../utils/EventBus.js';
 import { getCurrentUserId, isUserLoggedIn } from '../utils/authUtils.js';
+import { logger } from '../utils/Logger.js';
 
 export class RatingManager {
     constructor() {
@@ -30,7 +31,7 @@ export class RatingManager {
 
             return result;
         } catch (error) {
-            console.error('Ошибка добавления оценки:', error);
+            logger.error('Ошибка добавления оценки:', error);
             throw error;
         }
     }
@@ -55,7 +56,7 @@ export class RatingManager {
 
             return result;
         } catch (error) {
-            console.error('Ошибка обновления оценки:', error);
+            logger.error('Ошибка обновления оценки:', error);
             throw error;
         }
     }
@@ -79,7 +80,7 @@ export class RatingManager {
 
             return result;
         } catch (error) {
-            console.error('Ошибка удаления оценки:', error);
+            logger.error('Ошибка удаления оценки:', error);
             throw error;
         }
     }
@@ -92,7 +93,7 @@ export class RatingManager {
             const result = await response.json();
             return result;
         } catch (error) {
-            console.error('Ошибка получения оценки:', error);
+            logger.error('Ошибка получения оценки:', error);
             throw error;
         }
     }
@@ -135,7 +136,7 @@ export class RatingManager {
                     modal.setRating(existingRating);
                 }
             } catch (err) {
-                console.warn('Failed to set rating on modal:', err);
+                logger.warn('Failed to set rating on modal:', err);
             }
         }
     }
@@ -157,7 +158,7 @@ export class RatingManager {
             });
             
         } catch (error) {
-            console.error('Error saving rating:', error);
+            logger.error('Error saving rating:', error);
             alert('Error saving rating: ' + error.message);
         }
     }
@@ -176,7 +177,7 @@ export class RatingManager {
             });
             
         } catch (error) {
-            console.error('Error deleting rating:', error);
+            logger.error('Error deleting rating:', error);
             alert('Error deleting rating: ' + error.message);
         }
     }

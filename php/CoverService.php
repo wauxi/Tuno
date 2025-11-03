@@ -3,14 +3,16 @@ require_once __DIR__ . '/config.php';
 
 class CoverService {
     private $pdo;
-    private $cacheLifetime = 2592000; // 30 дней вместо 6 часов
+    private $cacheLifetime;
     
     const SOURCE_MANUAL = 'manual';
     const SOURCE_SPOTIFY = 'spotify';
     const SOURCE_LASTFM = 'lastfm';
+    const DEFAULT_CACHE_TTL = 2592000; // 30 days
 
-    public function __construct($pdo) {
+    public function __construct($pdo, $cacheLifetime = self::DEFAULT_CACHE_TTL) {
         $this->pdo = $pdo;
+        $this->cacheLifetime = $cacheLifetime;
     }
 
     /**

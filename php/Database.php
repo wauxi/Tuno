@@ -23,10 +23,11 @@ class Database {
             );
         } catch(PDOException $e) {
             error_log("Database connection error: " . $e->getMessage());
-            http_response_code(500);
+            http_response_code(503);
+            header('Content-Type: application/json; charset=utf-8');
             echo json_encode([
                 'success' => false,
-                'error' => 'Ошибка подключения к базе данных'
+                'error' => 'Service temporarily unavailable'
             ], JSON_UNESCAPED_UNICODE);
             exit;
         }
