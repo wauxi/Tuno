@@ -100,7 +100,6 @@ class MusicboardApp {
     initDataServices() {
         this.dataService = new DataService({
             apiUrl: 'http://ms2/php/api.php',
-            cacheLifetime: 60 * 60 * 1000,
             userId: this.viewingUserId
         });
         
@@ -128,17 +127,50 @@ class MusicboardApp {
             setCurrentUserId(this.viewingUserId || DEFAULTS.GUEST_USER_ID);
         }
         
-        eventBus.on(EVENTS.RATING_UPDATED, () => {
+        eventBus.on(EVENTS.RATING_UPDATED, async (data) => {
+            if (data.shouldReload) {
+                // Реактивное обновление данных без перезагрузки страницы
+                await this.refreshData();
+            }
+            
             if (this.albumMenuManager) {
                 this.albumMenuManager.initAlbumMenus();
             }
         });
+        
+        eventBus.on(EVENTS.RATING_DELETED, async (data) => {
+            if (data.shouldReload) {
+                // Реактивное обновление данных без перезагрузки страницы
+                await this.refreshData();
+            }
+        });
+    }
+    
+    async refreshData() {
+        try {
+            // Принудительно загрузить свежие данные с сервера
+            await this.dataService.loadData(true);
+            
+            // Обновить UI
+            if (this.recentlyGrid) this.recentlyGrid.render();
+            if (this.listenLaterGrid) this.listenLaterGrid.render();
+            
+            // Переинициализировать меню
+            if (this.albumMenuManager) {
+                this.albumMenuManager.initAlbumMenus();
+            }
+            
+            console.log('✅ Data refreshed successfully without page reload!');
+        } catch (error) {
+            console.error('❌ Error refreshing data:', error);
+            // Fallback: если что-то пошло не так, сделаем reload
+            window.location.reload();
+        }
     }
     
     async loadData() {
         try {
-            this.dataService.clearCache();
-            await this.dataService.loadData(true);
+            await this.dataService.loadData(false);
             
             if (this.recentlyGrid) this.recentlyGrid.render();
             if (this.listenLaterGrid) this.listenLaterGrid.render();

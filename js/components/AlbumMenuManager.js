@@ -21,9 +21,41 @@ export class AlbumMenuManager {
     attachMenuHandlers(menu) {
         const albumElement = menu.closest('[data-album-id]');
         if (!albumElement) return;
-        
+
         const albumId = parseInt(albumElement.dataset.albumId);
-        
+        const dropdown = menu.querySelector('.album-menu__dropdown');
+
+        if (dropdown) {
+            const trigger = menu.querySelector('.album-menu__trigger');
+            const isSideMenu = menu.classList.contains('album-menu--side');
+            
+            const adjustDropdownPosition = () => {
+                if (isSideMenu) return;
+                
+                requestAnimationFrame(() => {
+                    const rect = dropdown.getBoundingClientRect();
+                    const windowWidth = window.innerWidth;
+                    const padding = 10;
+                    
+                    dropdown.classList.remove('align-left', 'align-right');
+                    
+                    if (rect.left < padding) {
+                        dropdown.classList.add('align-left');
+                    } else if (rect.right > windowWidth - padding) {
+                        dropdown.classList.add('align-right');
+                    }
+                });
+            };
+
+            if (trigger) {
+                trigger.addEventListener('mouseenter', adjustDropdownPosition);
+                trigger.addEventListener('focus', adjustDropdownPosition);
+                trigger.addEventListener('click', adjustDropdownPosition);
+            }
+            menu.addEventListener('mouseenter', adjustDropdownPosition);
+            dropdown.addEventListener('transitionend', adjustDropdownPosition);
+        }
+
         const writeReviewBtn = menu.querySelector('[data-action="write-review"]');
         const removeBtn = menu.querySelector('[data-action="remove-listen-later"]');
         const spotifyBtn = menu.querySelector('[data-action="go-to-album"]');

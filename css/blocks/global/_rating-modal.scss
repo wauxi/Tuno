@@ -40,22 +40,25 @@ rating-modal {
     position: relative;
     background-color: var(--color-dark-alt);
     border-radius: var(--border-radius);
-    max-height: 90vh;
-    overflow-y: auto;
     transform: translateY(-20px);
     transition: transform 0.3s ease;
     border: var(--border);
+    box-sizing: border-box;
+
   }
 
   &__header {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
     padding: 10px 24px;
     border-bottom: var(--border);
+    position: relative;
 
     h3 {
-      font-weight: 600;
+      font-size: 18px;
+      font-weight: 800;
+      margin: 0px;
     }
   }
 
@@ -66,6 +69,8 @@ rating-modal {
     cursor: pointer;
     border-radius: 50%;
     transition: background-color 0.2s ease;
+    position: absolute;
+    right: 24px;
 
     &:hover {
       background-color: var(--color-gray);
@@ -84,14 +89,18 @@ rating-modal {
     display: flex;
     padding: 24px;
     gap: 24px;
+    overflow-x: hidden;
   }
 
   &__left {
-    flex: 0 0 200px;
+    flex: 0 0 auto;
+    min-width: 0;
   }
 
   &__right {
-    flex: 1;
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-x: hidden;
   }
 
   &__footer {
@@ -106,10 +115,11 @@ rating-modal {
 
 .album-info {
   &__cover {
-    width: 200px;
-    height: 200px;
+    width: clamp(120px, 13vw, 200px);
+    height: clamp(120px, 13vw, 200px);
     border-radius: 8px;
     overflow: hidden;
+    flex-shrink: 0;
 
     img {
       width: 100%;
@@ -119,6 +129,9 @@ rating-modal {
   }
 
   &__details {
+    padding-top: 16px;
+    min-width: 0;
+    
     h4 {
       margin: 0 0 2px 0;
       font-size: 24px;
@@ -161,6 +174,7 @@ rating-modal {
   
   .rating-selector {
     display: flex;
+    justify-content: flex-start;
     
     .star {
       font-size: 38px;
@@ -218,9 +232,14 @@ rating-modal {
         margin: -4px -8px;
         border-radius: 4px;
         transition: background-color 0.2s ease;
+        position: relative;
         
         &:hover {
           background-color: rgba(255, 255, 255, 0.05);
+        }
+        
+        .checkbox-icon {
+          display: none;
         }
         
         input[type="checkbox"] {
@@ -232,7 +251,7 @@ rating-modal {
           appearance: none;
           background-color: transparent;
           border: 2px solid var(--color-gray);
-          border-radius: var(--border-radius-small);
+          border-radius: var(--border-radius);
           position: relative;
           transition: all 0.2s ease;
           
@@ -286,12 +305,14 @@ rating-modal {
   input[type="text"],
   textarea {
     width: 100%;
+    max-width: 100%;
     padding: 12px;
     color: var(--color-light);
     background-color: var(--color-dark);
     border: var(--border);
-    border-radius: 4px;
+    border-radius: var(--border-radius);
     font-size: 14px;
+    box-sizing: border-box;
     
     &:focus {
       outline: none;
@@ -305,6 +326,7 @@ rating-modal {
   textarea {
     resize: vertical;
     min-height: 80px;
+    max-width: 100%;
   }
 }
 

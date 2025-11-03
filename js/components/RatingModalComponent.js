@@ -15,6 +15,10 @@ export class RatingModal extends HTMLElement {
         this.render();
         this.attachEventListeners();
         
+        if (window.innerWidth <= 970) {
+            document.body.classList.add('modal-open');
+        }
+        
         requestAnimationFrame(() => {
             const modal = this.querySelector('.rating-modal');
             if (modal) {
@@ -27,6 +31,7 @@ export class RatingModal extends HTMLElement {
         if (this.escapeHandler) {
             document.removeEventListener('keydown', this.escapeHandler);
         }
+        document.body.classList.remove('modal-open');
     }
     
     attributeChangedCallback(name, oldValue, newValue) {
@@ -53,16 +58,18 @@ export class RatingModal extends HTMLElement {
                     
                     <div class="rating-modal__body">
                         <div class="rating-modal__left">
-                            <div class="album-info__cover">
-                                <img src="${coverUrl}" alt="${albumName}">
+                            <div class="album-info__wrapper">
+                                <div class="album-info__cover">
+                                    <img src="${coverUrl}" alt="${albumName}">
+                                </div>
+                                <div class="album-info__details">
+                                    <h4>${albumName}</h4>
+                                    <p>${artist} • Album</p>
+                                </div>
                             </div>
                         </div>
                         
                         <div class="rating-modal__right">
-                            <div class="album-info__details">
-                                <h4>${albumName}</h4>
-                                <p>${artist} • Album</p>
-                            </div>
                             <form class="rating-form">
                                 <div class="rating-row">
                                     <div class="rating-group">
@@ -79,6 +86,13 @@ export class RatingModal extends HTMLElement {
                                             <label class="checkbox-item">
                                                 <input type="checkbox" id="mustListen" name="must_listen">
                                                 <span>Все должны это послушать</span>
+                                                <div class="checkbox-icon unchecked" data-checkbox="mustListen">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"    
+                                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">                                          
+                                                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>                            
+                                                        <polyline points="9 22 9 12 15 12 15 22"></polyline>                 
+                                                    </svg>           
+                                                </div>
                                             </label>
                                         </div>
                                         <div class="checkbox-section">
@@ -86,6 +100,14 @@ export class RatingModal extends HTMLElement {
                                             <label class="checkbox-item">
                                                 <input type="checkbox" id="wouldRelisten" name="would_relisten">
                                                 <span>Переслушал бы</span>
+                                                <div class="checkbox-icon unchecked" data-checkbox="wouldRelisten">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <polyline points="17 1 21 5 17 9"></polyline>
+                                                        <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                                                        <polyline points="7 23 3 19 7 15"></polyline>
+                                                        <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                                                    </svg>
+                                                </div>
                                             </label>
                                         </div>
                                     </div>
@@ -161,6 +183,16 @@ export class RatingModal extends HTMLElement {
         const deleteBtn = this.querySelector('.delete-btn');
         deleteBtn.addEventListener('click', () => this.delete());
         
+        const checkboxIcons = this.querySelectorAll('.checkbox-icon');
+        checkboxIcons.forEach(icon => {
+            icon.addEventListener('click', (e) => this.handleIconClick(e));
+        });
+        
+        const checkboxes = this.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', (e) => this.handleCheckboxChange(e));
+        });
+        
         this.escapeHandler = (e) => {
             if (e.key === 'Escape') this.close();
         };
@@ -180,6 +212,36 @@ export class RatingModal extends HTMLElement {
         
         const input = this.querySelector('input[name="rating"]');
         input.value = this.currentRating * 2;
+    }
+    
+    handleIconClick(e) {
+        const icon = e.currentTarget;
+        const checkboxId = icon.dataset.checkbox;
+        const checkbox = this.querySelector(`#${checkboxId}`);
+        
+        if (checkbox) {
+            checkbox.checked = !checkbox.checked;
+            this.updateIconState(icon, checkbox.checked);
+        }
+    }
+    
+    handleCheckboxChange(e) {
+        const checkbox = e.target;
+        const icon = this.querySelector(`.checkbox-icon[data-checkbox="${checkbox.id}"]`);
+        
+        if (icon) {
+            this.updateIconState(icon, checkbox.checked);
+        }
+    }
+    
+    updateIconState(icon, isChecked) {
+        if (isChecked) {
+            icon.classList.remove('unchecked');
+            icon.classList.add('checked');
+        } else {
+            icon.classList.remove('checked');
+            icon.classList.add('unchecked');
+        }
     }
     
     handleStarHover(e) {
@@ -285,6 +347,7 @@ export class RatingModal extends HTMLElement {
         }
         
         document.removeEventListener('keydown', this.escapeHandler);
+        document.body.classList.remove('modal-open');
         
         this.dispatchEvent(new CustomEvent('close', {
             bubbles: true,
@@ -317,10 +380,16 @@ export class RatingModal extends HTMLElement {
         }
         
         if (ratingData.must_listen) {
-            form.querySelector('input[name="must_listen"]').checked = true;
+            const checkbox = form.querySelector('input[name="must_listen"]');
+            checkbox.checked = true;
+            const icon = this.querySelector('.checkbox-icon[data-checkbox="mustListen"]');
+            if (icon) this.updateIconState(icon, true);
         }
         if (ratingData.would_relisten) {
-            form.querySelector('input[name="would_relisten"]').checked = true;
+            const checkbox = form.querySelector('input[name="would_relisten"]');
+            checkbox.checked = true;
+            const icon = this.querySelector('.checkbox-icon[data-checkbox="wouldRelisten"]');
+            if (icon) this.updateIconState(icon, true);
         }
         
         if (ratingData.listened_date) {

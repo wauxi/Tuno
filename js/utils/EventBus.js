@@ -131,7 +131,8 @@ export const EVENTS = {
     // Data events
     DATA_LOADED: 'data:loaded',
     DATA_ERROR: 'data:error',
-    
+    CLEAR_CACHE: 'data:clear_cache',
+
     // Navigation events
     NAVIGATE: 'navigate',
     ROUTE_CHANGED: 'route:changed',

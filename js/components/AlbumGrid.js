@@ -74,6 +74,7 @@ export class AlbumGrid {
                         alt="${albumName}" 
                         class="recently__cover" 
                         loading="lazy"
+                        decoding="async"
                         onerror="this.src='https://via.placeholder.com/150x150/333/666?text=No+Image'"
                         onload="this.classList.add('loaded')">
                     <div class="album-menu">
@@ -116,13 +117,14 @@ export class AlbumGrid {
                     alt="${albumName}" 
                     class="listen-later__cover" 
                     loading="lazy"
+                    decoding="async"
                     onerror="this.src='https://via.placeholder.com/50x50/333/666?text=No+Image'"
                     onload="this.classList.add('loaded')">
                 <div class="listen-later__info">
                     <h3 class="listen-later__album">${albumName}</h3>
                     <p class="listen-later__artist">${artist}</p>
                 </div>
-                <div class="album-menu">
+                <div class="album-menu album-menu--side">
                     <button class="album-menu__trigger" type="button">
                         <span class="album-menu__dots"></span>
                     </button>

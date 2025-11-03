@@ -47,3 +47,9 @@
     @content;
   }
 }
+
+@mixin tablet-modal {
+  @media screen and (max-width: 970px) {
+    @content;
+  }
+}

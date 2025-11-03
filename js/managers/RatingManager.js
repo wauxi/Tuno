@@ -149,8 +149,13 @@ export class RatingManager {
                 await this.addRating(ratingData.album_id, ratingData);
             }
             
-            eventBus.emit(EVENTS.RATING_UPDATED, { ratingData, existingRating });
-            window.location.reload();
+            // Испустить событие с данными для реактивного обновления
+            eventBus.emit(EVENTS.RATING_UPDATED, { 
+                ratingData, 
+                existingRating,
+                shouldReload: true 
+            });
+            
         } catch (error) {
             console.error('Error saving rating:', error);
             alert('Error saving rating: ' + error.message);
@@ -162,8 +167,14 @@ export class RatingManager {
         
         try {
             await this.deleteRating(existingRating.id);
-            eventBus.emit(EVENTS.RATING_DELETED, { ratingId: existingRating.id });
-            window.location.reload();
+            
+            // Испустить событие для реактивного обновления
+            eventBus.emit(EVENTS.RATING_DELETED, { 
+                ratingId: existingRating.id,
+                albumId: existingRating.album_id,
+                shouldReload: true 
+            });
+            
         } catch (error) {
             console.error('Error deleting rating:', error);
             alert('Error deleting rating: ' + error.message);

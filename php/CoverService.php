@@ -3,7 +3,7 @@ require_once __DIR__ . '/config.php';
 
 class CoverService {
     private $pdo;
-    private $cacheLifetime = 21600; // 6 часов
+    private $cacheLifetime = 2592000; // 30 дней вместо 6 часов
     
     const SOURCE_MANUAL = 'manual';
     const SOURCE_SPOTIFY = 'spotify';
@@ -113,6 +113,46 @@ class CoverService {
     }
 
     /**
+     * Batch-загрузка обложек для нескольких альбомов (решение N+1)
+     * @param array $albumIds - массив ID альбомов
+     * @return array - ассоциативный массив [album_id => cover_url]
+     */
+    public function getBatchCoverUrls($albumIds) {
+        if (empty($albumIds)) return [];
+        
+        $placeholders = str_repeat('?,', count($albumIds) - 1) . '?';
+        $query = "
+            SELECT album_id, cover_url, source, updated_at
+            FROM album_covers_cache
+            WHERE album_id IN ($placeholders)
+        ";
+        
+        $stmt = $this->pdo->prepare($query);
+        $stmt->execute($albumIds);
+        $cached = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        $results = [];
+        $now = time();
+        
+        // Обработать закэшированные обложки
+        foreach ($cached as $row) {
+            // Manual uploads всегда валидны
+            if ($row['source'] === self::SOURCE_MANUAL) {
+                $results[$row['album_id']] = $row['cover_url'];
+                continue;
+            }
+            
+            // Проверить TTL для Spotify/Last.fm
+            $updatedTime = strtotime($row['updated_at']);
+            if (($now - $updatedTime) < $this->cacheLifetime) {
+                $results[$row['album_id']] = $row['cover_url'];
+            }
+        }
+        
+        return $results;
+    }
+
+    /**
      * Получить из кэша
      */
     private function getCachedCover($albumId) {
@@ -147,17 +187,30 @@ class CoverService {
      * Сохранить в кэш
      */
     private function cacheCover($albumId, $spotifyId, $coverUrl, $source) {
-        $query = "
-            INSERT INTO album_covers_cache (album_id, spotify_id, cover_url, source, updated_at)
-            VALUES (?, ?, ?, ?, NOW())
-            ON DUPLICATE KEY UPDATE
-                spotify_id = VALUES(spotify_id),
-                cover_url = VALUES(cover_url),
-                source = VALUES(source),
-                updated_at = NOW()
-        ";
-        $stmt = $this->pdo->prepare($query);
-        return $stmt->execute([$albumId, $spotifyId, $coverUrl, $source]);
+        // Сначала проверить, есть ли уже запись
+        $checkQuery = "SELECT id FROM album_covers_cache WHERE album_id = ?";
+        $checkStmt = $this->pdo->prepare($checkQuery);
+        $checkStmt->execute([$albumId]);
+        $existing = $checkStmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($existing) {
+            // Обновить существующую запись
+            $updateQuery = "
+                UPDATE album_covers_cache 
+                SET spotify_id = ?, cover_url = ?, source = ?, updated_at = NOW()
+                WHERE album_id = ?
+            ";
+            $stmt = $this->pdo->prepare($updateQuery);
+            return $stmt->execute([$spotifyId, $coverUrl, $source, $albumId]);
+        } else {
+            // Вставить новую запись
+            $insertQuery = "
+                INSERT INTO album_covers_cache (album_id, spotify_id, cover_url, source, updated_at)
+                VALUES (?, ?, ?, ?, NOW())
+            ";
+            $stmt = $this->pdo->prepare($insertQuery);
+            return $stmt->execute([$albumId, $spotifyId, $coverUrl, $source]);
+        }
     }
 
     /**

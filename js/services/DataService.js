@@ -1,19 +1,14 @@
-import { CONFIG } from '../config/constants.js';
-import { getItem, setItem, removeItems } from '../utils/storageUtils.js';
+import { CACHE_CONFIG, cacheManager } from '../utils/CacheManager.js';
 
 export class DataService {
-    constructor({ apiUrl, cacheLifetime = 3600000, userId }) {
+    constructor({ apiUrl, userId }) {
         this.apiUrl = apiUrl || 'http://ms2/php/api.php';
-        this.cacheLifetime = cacheLifetime;
         this.userId = userId;
-        this.cacheKeys = {
-            recentActivity: `recentActivity_${userId}`,
-            recentActivityTimestamp: `recentActivityTimestamp_${userId}`,
-            listenLater: `listenLaterData_${userId}`,
-            listenLaterTimestamp: `listenLaterTimestamp_${userId}`,
-            albums: `albumsCache_${userId}`,
-            albumsTimestamp: `albumsTimestamp_${userId}`
-        };
+        this.cacheManager = cacheManager;
+        
+        // Ключи кэша с префиксом пользователя
+        this.cacheKey = `user_${userId}_data`;
+        
         this.data = {
             recentActivity: null,
             listenLater: null,
@@ -50,9 +45,10 @@ export class DataService {
     
     async loadData(forceRefresh = false) {
         try {
+            // Попытаться загрузить из кэша
             if (!forceRefresh) {
-
-                const cachedData = this.loadFromCache();
+                const cachedData = this.cacheManager.get(this.cacheKey);
+                
                 if (cachedData) {
                     this.data = cachedData;
                     
@@ -60,10 +56,13 @@ export class DataService {
                         return this.loadData(true);
                     }
                     
+                    console.log('📦 Data loaded from cache');
                     return this.data;
                 }
             }
             
+            // Загрузить с сервера
+            console.log('🌐 Loading data from server...');
             const serverData = await this.fetchFromApi();
             
             if (serverData && serverData.success) {
@@ -71,8 +70,14 @@ export class DataService {
                 this.data.listenLater = serverData.listenLater || [];
                 this.data.albums = serverData.albums || [];
                 
-                this.saveToCache();
+                // Сохранить в кэш
+                this.cacheManager.set(
+                    this.cacheKey, 
+                    this.data, 
+                    CACHE_CONFIG.TTL.USER_DATA
+                );
                 
+                console.log('✅ Data loaded and cached');
                 return this.data;
             } else {
                 throw new Error('Сервер вернул некорректные данные');
@@ -80,6 +85,19 @@ export class DataService {
             
         } catch (error) {
             console.error('❌ Ошибка загрузки данных:', error);
+            
+            // Fallback на кэш даже если устарел
+            const staleCache = localStorage.getItem(this.cacheKey);
+            if (staleCache) {
+                try {
+                    const parsed = JSON.parse(staleCache);
+                    this.data = parsed.value;
+                    console.warn('⚠️ Using stale cache due to error');
+                    return this.data;
+                } catch (e) {
+                    // Ignore parse errors
+                }
+            }
             
             this.data = {
                 recentActivity: [],
@@ -91,58 +109,10 @@ export class DataService {
         }
     }
     
-
+    /**
+     * Инвалидировать кэш
+     */
     clearCache() {
-        removeItems([
-            this.cacheKeys.recentActivity,
-            this.cacheKeys.recentActivityTimestamp,
-            this.cacheKeys.listenLater,
-            this.cacheKeys.listenLaterTimestamp,
-            this.cacheKeys.albums,
-            this.cacheKeys.albumsTimestamp
-        ]);
-    }
-    
-
-    loadFromCache() {
-        try {
-            const now = Date.now();
-            
-            const recentActivityTimestamp = getItem(this.cacheKeys.recentActivityTimestamp);
-            const listenLaterTimestamp = getItem(this.cacheKeys.listenLaterTimestamp);
-            
-            const isRecentValid = recentActivityTimestamp && (now - parseInt(recentActivityTimestamp)) < this.cacheLifetime;
-            const isLaterValid = listenLaterTimestamp && (now - parseInt(listenLaterTimestamp)) < this.cacheLifetime;
-            
-            if (isRecentValid && isLaterValid) {
-                return {
-                    recentActivity: getItem(this.cacheKeys.recentActivity, []),
-                    listenLater: getItem(this.cacheKeys.listenLater, []),
-                    albums: getItem(this.cacheKeys.albums, [])
-                };
-            }
-        } catch (error) {
-            console.warn('⚠️ Ошибка загрузки из кеша:', error);
-        }
-        
-        return null;
-    }
-    
-
-    saveToCache() {
-        try {
-            const now = Date.now();
-            
-            setItem(this.cacheKeys.recentActivity, this.data.recentActivity);
-            setItem(this.cacheKeys.recentActivityTimestamp, now.toString());
-            
-            setItem(this.cacheKeys.listenLater, this.data.listenLater);
-            setItem(this.cacheKeys.listenLaterTimestamp, now.toString());
-            
-            setItem(this.cacheKeys.albums, this.data.albums);
-            setItem(this.cacheKeys.albumsTimestamp, now.toString());
-        } catch (error) {
-            console.warn('⚠️ Ошибка сохранения в кеш:', error);
-        }
+        return this.cacheManager.invalidateUserCache(this.userId);
     }
 }

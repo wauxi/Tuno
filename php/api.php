@@ -75,10 +75,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         error_log("Recent Activity найдено записей: " . count($recentResults));
         
         $coverService = new CoverService($pdo);
+        
+        // BATCH загрузка обложек (NO MORE N+1!)
+        $albumIds = array_column($recentResults, 'album_id');
+        $coverUrls = $coverService->getBatchCoverUrls($albumIds);
+        
         $recentActivity = [];
         
         foreach ($recentResults as $row) {
-            $coverUrl = $coverService->getCoverUrl($row['album_id'], [
+            // Взять из batch-результата или загрузить индивидуально
+            $coverUrl = $coverUrls[$row['album_id']] ?? $coverService->getCoverUrl($row['album_id'], [
                 'spotify_link' => $row['spotify_link'],
                 'artist' => $row['artist'],
                 'album_name' => $row['album_name']
@@ -124,9 +130,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         
         error_log("Listen Later найдено записей: " . count($listenLaterResults));
         
+        // BATCH загрузка обложек для Listen Later
+        $listenLaterIds = array_column($listenLaterResults, 'album_id');
+        $listenLaterCovers = $coverService->getBatchCoverUrls($listenLaterIds);
+        
         $listenLater = [];
         foreach ($listenLaterResults as $row) {
-            $coverUrl = $coverService->getCoverUrl($row['album_id'], [
+            $coverUrl = $listenLaterCovers[$row['album_id']] ?? $coverService->getCoverUrl($row['album_id'], [
                 'spotify_link' => $row['spotify_link'],
                 'artist' => $row['artist'],
                 'album_name' => $row['album_name']
@@ -271,9 +281,13 @@ function handleSearchAlbums() {
             'execution_time' => $executionTime . 'ms'
         ]);
         
+        // BATCH загрузка обложек для результатов поиска
         $coverService = new CoverService($pdo);
+        $albumIds = array_column($albums, 'id');
+        $coverUrls = $coverService->getBatchCoverUrls($albumIds);
+        
         foreach ($albums as &$album) {
-            $album['coverUrl'] = $coverService->getCoverUrl($album['id'], [
+            $album['coverUrl'] = $coverUrls[$album['id']] ?? $coverService->getCoverUrl($album['id'], [
                 'spotify_link' => $album['spotify_link'],
                 'artist' => $album['artist'],
                 'album_name' => $album['album_name']
