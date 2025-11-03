@@ -30,7 +30,7 @@ class AuthManager {
         this.isLoginMode = !this.isLoginMode;
         this.updateUI();
         
-        const newUrl = this.isLoginMode ? 'login.html' : 'login.html?mode=register';
+        const newUrl = this.isLoginMode ? 'pages/login.html' : 'pages/login.html?mode=register';
         window.history.replaceState({}, '', newUrl);
     }
     
@@ -116,7 +116,7 @@ class AuthManager {
                     this.showSuccess('Вход выполнен успешно!');
                     
                     await new Promise(resolve => setTimeout(resolve, 1000));
-                    window.location.href = 'Home.html';
+                    window.location.href = '/Home.html';
                 } else {
                     this.showSuccess('Регистрация прошла успешно! Теперь можете войти.');
                     this.isLoginMode = true;
@@ -138,7 +138,8 @@ class AuthManager {
     checkCurrentUser() {
         const currentUser = getCurrentUserData();
         if (currentUser) {
-            window.location.href = 'Home.html';
+            // Use absolute path to avoid resolving relative to /pages/
+            window.location.href = '/Home.html';
         }
     }
     

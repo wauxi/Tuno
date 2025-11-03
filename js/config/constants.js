@@ -47,8 +47,8 @@ export const CONFIG = {
     // Routes
     ROUTES: {
         HOME: 'Home.html',
-        LOGIN: 'login.html',
-        SIGNUP: 'login.html?mode=register',
+        LOGIN: 'pages/login.html',
+        SIGNUP: 'pages/login.html?mode=register',
     },
     
     // User Roles

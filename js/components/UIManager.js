@@ -12,20 +12,32 @@ export class UIManager {
     updateAuthUI() {
         const authButtons = document.querySelector('.navigation__auth');
         const userInfo = document.querySelector('.navigation__user-info');
+        const initialState = (typeof window !== 'undefined' && window.__INITIAL_STATE__) ? window.__INITIAL_STATE__ : null;
+        const currentUser = initialState && initialState.currentUser ? initialState.currentUser : (this.authService.isUserLoggedIn() ? this.authService.getCurrentUser() : null);
         
-        if (this.authService.isUserLoggedIn()) {
-            const currentUser = this.authService.getCurrentUser();
+        if (currentUser) {
             
             if (authButtons) authButtons.style.display = 'none';
             if (userInfo) {
                 userInfo.innerHTML = `
-                    <div class="navigation__user-content">
-                        <span class="navigation__user-name">${currentUser.display_name || currentUser.username}</span>
-                        <button class="navigation__logout-btn" data-action="logout">Выйти</button>
+                    <div class="navigation__user-avatar navigation-img">
+                        <img src="${currentUser.avatar_url || './img/logo.jpg'}" alt="User Avatar">
+                        <div class="navigation__user-dropdown">
+                            <button class="navigation__user-dropdown-item" data-action="view-profile">
+                                Profile
+                            </button>
+                            <button class="navigation__user-dropdown-item" data-action="settings">
+                                Settings
+                            </button>
+                            <button class="navigation__user-dropdown-item navigation__user-dropdown-item--logout" data-action="logout">
+                                Log out
+                            </button>
+                        </div>
                     </div>
                 `;
                 userInfo.style.display = 'flex';
             }
+            if (authButtons) authButtons.style.display = 'none';
         } else {
             if (userInfo) userInfo.style.display = 'none';
             if (authButtons) {

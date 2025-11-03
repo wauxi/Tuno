@@ -3,8 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  
-  <!-- Environment Configuration -->
   <meta name="app-env" content="development">
   <meta name="api-base-url" content="http://ms2/php">
   
@@ -15,7 +13,7 @@
 <body>
   <header class="navigation">
     <section class="navigation__inner container">
-      <div class="navigation__brand-logo">
+      <div class="navigation-img">
         <img src="./img/logo.jpg" alt="Musicboard logo" draggable="false"/>
       </div>
 
@@ -59,15 +57,12 @@
         </div>
       </div>
 
-
-
-
-      <div class="navigation__auth buttons">
+      <div class="navigation__auth buttons" style="display: none;">
         <button type="button" class="navigation__auth-button button"><span>Login</span></button>
         <button type="button" class="navigation__auth-button button"><span>Sign Up</span></button>
       </div>
 
-      <div class="navigation__user-info">
+      <div class="navigation__user-info" style="display: none;">
       </div>
     </section>
   </header>

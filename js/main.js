@@ -7,6 +7,7 @@ import { AuthService } from './services/AuthService.js';
 import { UserService } from './services/UserService.js';
 import { UIManager } from './components/UIManager.js';
 import { AlbumMenuManager } from './components/AlbumMenuManager.js';
+import { UserMenuManager } from './components/UserMenuManager.js';
 import { eventBus, EVENTS } from './utils/EventBus.js';
 import { CONFIG, DEFAULTS, UI, ROUTES, TIMEOUTS } from './config/constants.js';
 import { setCurrentUserId } from './utils/authUtils.js';
@@ -20,6 +21,7 @@ class MusicboardApp {
         this.userService = new UserService();
         this.uiManager = null;
         this.albumMenuManager = null;
+        this.userMenuManager = null;
         this.viewingUserId = null;
         this.dataService = null;
         this.recentlyGrid = null;
@@ -47,6 +49,10 @@ class MusicboardApp {
         
         new Navigation();
         this.initDataServices();
+        
+        // Initialize user menu
+        this.userMenuManager = new UserMenuManager(this.authService);
+        this.userMenuManager.initUserMenu();
         
         // Load data asynchronously
         await this.loadData();
