@@ -1,4 +1,4 @@
-import { UI } from '../config/constants.js';
+import { CONFIG, UI, IMAGES } from '../config/constants.js';
 import { getCurrentUserId } from '../utils/authUtils.js';
 
 export class SearchManager {
@@ -151,7 +151,7 @@ export class SearchManager {
     
     async performModalSearch(query) {
         try {
-            const url = `php/api.php?action=search&q=${encodeURIComponent(query)}`;
+            const url = `${CONFIG.API.BASE_URL}/${CONFIG.API.ENDPOINTS.MAIN}?action=search&q=${encodeURIComponent(query)}`;
             
             const response = await fetch(url);
             
@@ -218,7 +218,7 @@ export class SearchManager {
     
     async performSearch(query) {
         try {
-            const url = `php/api.php?action=search&q=${encodeURIComponent(query)}`;
+            const url = `${CONFIG.API.BASE_URL}/${CONFIG.API.ENDPOINTS.MAIN}?action=search&q=${encodeURIComponent(query)}`;
             
             const response = await fetch(url);
             
@@ -271,7 +271,7 @@ export class SearchManager {
                 <img src="${album.coverUrl}" 
                      alt="${album.album_name}" 
                      class="search-result__cover"
-                     onerror="this.src='https://via.placeholder.com/50x50/333/666?text=No+Image'">
+                     onerror="this.src='${IMAGES.PLACEHOLDER}'">
                 <div class="search-result__info">
                     <h4 class="search-result__album">${album.album_name}</h4>
                     <p class="search-result__artist">${album.artist}</p>
@@ -299,7 +299,7 @@ export class SearchManager {
             let existingRating = null;
             
             try {
-                const ratingResponse = await fetch(`php/ratings-api.php?album_id=${albumData.id}&user_id=${currentUserId}`);
+                const ratingResponse = await fetch(`${CONFIG.API.BASE_URL}/${CONFIG.API.ENDPOINTS.RATINGS}?album_id=${albumData.id}&user_id=${currentUserId}`);
                 const ratingData = await ratingResponse.json();
                 existingRating = ratingData.success ? ratingData.rating : null;
             } catch (error) {

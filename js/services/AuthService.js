@@ -1,5 +1,6 @@
 import { getCurrentUserData, clearCurrentUser } from '../utils/authUtils.js';
 import { logger } from '../utils/Logger.js';
+import { CONFIG } from '../config/constants.js';
 
 export class AuthService {
     constructor() {
@@ -14,7 +15,7 @@ export class AuthService {
     
     async logout() {
         try {
-            const response = await fetch('php/auth-api.php', {
+            const response = await fetch(`${CONFIG.API.BASE_URL}/${CONFIG.API.ENDPOINTS.AUTH}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

@@ -1,3 +1,5 @@
+import { CONFIG } from '../config/constants.js';
+
 export class UserService {
     constructor() {
         this.usersCache = null;
@@ -5,7 +7,7 @@ export class UserService {
     
     async loadUsers() {
         try {
-            const response = await fetch('php/get-users.php');
+            const response = await fetch(`${CONFIG.API.BASE_URL}/${CONFIG.API.ENDPOINTS.USERS}`);
             
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);

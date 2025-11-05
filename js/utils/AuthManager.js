@@ -1,10 +1,11 @@
 import { setCurrentUserData, getCurrentUserData } from './authUtils.js';
+import { CONFIG, ROUTES } from '../config/constants.js';
 
 class AuthManager {
     constructor() {
         const urlParams = new URLSearchParams(window.location.search);
         this.isLoginMode = urlParams.get('mode') !== 'register';
-        this.apiUrl = 'http://ms2/php/auth-api.php';
+        this.apiUrl = `${CONFIG.API.BASE_URL}/${CONFIG.API.ENDPOINTS.AUTH}`;
         this.init();
     }
     
@@ -30,7 +31,7 @@ class AuthManager {
         this.isLoginMode = !this.isLoginMode;
         this.updateUI();
         
-        const newUrl = this.isLoginMode ? 'pages/login.html' : 'pages/login.html?mode=register';
+        const newUrl = this.isLoginMode ? ROUTES.LOGIN : ROUTES.SIGNUP;
         window.history.replaceState({}, '', newUrl);
     }
     
@@ -116,7 +117,7 @@ class AuthManager {
                     this.showSuccess('Вход выполнен успешно!');
                     
                     await new Promise(resolve => setTimeout(resolve, 1000));
-                    window.location.href = '/Home.html';
+                    window.location.href = `/${ROUTES.HOME}`;
                 } else {
                     this.showSuccess('Регистрация прошла успешно! Теперь можете войти.');
                     this.isLoginMode = true;
@@ -138,8 +139,7 @@ class AuthManager {
     checkCurrentUser() {
         const currentUser = getCurrentUserData();
         if (currentUser) {
-            // Use absolute path to avoid resolving relative to /pages/
-            window.location.href = '/Home.html';
+            window.location.href = `/${ROUTES.HOME}`;
         }
     }
     

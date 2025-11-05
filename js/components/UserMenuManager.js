@@ -1,4 +1,5 @@
 import { logger } from '../utils/Logger.js';
+import { ROUTES } from '../config/constants.js';
 
 export class UserMenuManager {
     constructor(authService) {
@@ -66,8 +67,7 @@ export class UserMenuManager {
     handleViewProfile() {
         const currentUser = this.authService.getCurrentUser();
         if (currentUser) {
-            // Navigate to user's profile page
-            window.location.href = `/Home.html?user_id=${currentUser.id}`;
+            window.location.href = `/${ROUTES.HOME}?user_id=${currentUser.id}`;
         }
     }
 
@@ -80,7 +80,7 @@ export class UserMenuManager {
     async handleLogout() {
         try {
             await this.authService.logout();
-            window.location.href = '/Home.html';
+            window.location.href = `/${ROUTES.HOME}`;
         } catch (error) {
             logger.error('Error during logout:', error);
             alert('Error logging out. Please try again.');

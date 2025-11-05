@@ -1,4 +1,4 @@
-import { UI } from '../config/constants.js';
+import { CONFIG, UI } from '../config/constants.js';
 import { logger } from '../utils/Logger.js';
 
 export class AlbumMenuManager {
@@ -99,7 +99,7 @@ export class AlbumMenuManager {
             const currentUser = this.authService.getCurrentUser();
             if (!currentUser) return null;
             
-            const response = await fetch(`php/ratings-api.php?album_id=${albumId}&user_id=${currentUser.id}`);
+            const response = await fetch(`${CONFIG.API.BASE_URL}/${CONFIG.API.ENDPOINTS.RATINGS}?album_id=${albumId}&user_id=${currentUser.id}`);
             const result = await response.json();
             
             if (result.success && result.rating) {
@@ -134,7 +134,7 @@ export class AlbumMenuManager {
         }
         
         try {
-            const response = await fetch('php/api.php', {
+            const response = await fetch(`${CONFIG.API.BASE_URL}/${CONFIG.API.ENDPOINTS.MAIN}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -230,7 +230,7 @@ export class AlbumMenuManager {
             id: albumId,
             album_name: titleElement ? titleElement.textContent.trim() : 'Неизвестный альбом',
             artist: artistElement ? artistElement.textContent.trim() : 'Неизвестный исполнитель',
-            coverUrl: coverElement ? coverElement.src : 'img/default-cover.png'
+            coverUrl: coverElement ? coverElement.src : CONFIG.DEFAULTS.COVER_PLACEHOLDER
         };
     }
 }

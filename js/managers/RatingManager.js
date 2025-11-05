@@ -1,12 +1,12 @@
 import { RatingUtils } from '../utils/RatingUtils.js';
-import { UI } from '../config/constants.js';
+import { CONFIG, UI } from '../config/constants.js';
 import { eventBus, EVENTS } from '../utils/EventBus.js';
 import { getCurrentUserId, isUserLoggedIn } from '../utils/authUtils.js';
 import { logger } from '../utils/Logger.js';
 
 export class RatingManager {
     constructor() {
-        this.apiUrl = 'php/ratings-api.php';
+        this.apiUrl = `${CONFIG.API.BASE_URL}/${CONFIG.API.ENDPOINTS.RATINGS}`;
         this.currentUserId = getCurrentUserId();
     }
 

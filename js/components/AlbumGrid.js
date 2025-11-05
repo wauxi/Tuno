@@ -1,4 +1,5 @@
 import { RatingUtils } from '../utils/RatingUtils.js';
+import { IMAGES } from '../config/constants.js';
 
 export class AlbumGrid {
     constructor({ container, dataType, dataService, template = 'album-item' }) {
@@ -96,7 +97,7 @@ export class AlbumGrid {
         };
         
         const starsHtml = rating ? RatingUtils.generateStarRating(rating, true) : '';
-        const placeholderUrl = `https://via.placeholder.com/${coverSize}/333/666?text=No+Image`;
+        const placeholderUrl = IMAGES.PLACEHOLDER;
         
         const menuClass = menuPosition ? `album-menu album-menu--${menuPosition}` : 'album-menu';
         const menuHtml = menuActions.map(({ action, icon, label, class: itemClass }) => 
@@ -163,6 +164,6 @@ export class AlbumGrid {
         return album.coverUrl || 
                album.cover_url || 
                album.cover || 
-               `https://via.placeholder.com/150x150/1a1a1a/ffffff?text=${encodeURIComponent(album.album_name || 'Album')}`;
+               IMAGES.FALLBACK;
     }
 }
