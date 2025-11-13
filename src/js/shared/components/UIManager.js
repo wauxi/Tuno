@@ -21,7 +21,7 @@ export class UIManager {
             if (userInfo) {
                 userInfo.innerHTML = `
                     <div class="navigation__user-avatar navigation-img">
-                        <img src="${currentUser.avatar_url || './img/logo.jpg'}" alt="User Avatar">
+                        <img src="${currentUser.avatar_url || '/img/logo.jpg'}" alt="User Avatar">
                         <div class="navigation__user-dropdown">
                             <button class="navigation__user-dropdown-item" data-action="view-profile">
                                 Profile

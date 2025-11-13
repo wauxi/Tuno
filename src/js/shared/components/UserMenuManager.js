@@ -72,9 +72,17 @@ export class UserMenuManager {
     }
 
     handleSettings() {
-        // Navigate to settings page or open settings modal
-        logger.info('Settings action clicked');
-        // You can implement this based on your needs
+        // Navigate to settings page
+        logger.info('Settings action clicked - navigating to settings page');
+        try {
+            // Use ROUTES.SETTINGS if available, otherwise fall back to pages/settings.html
+            const settingsRoute = ROUTES.SETTINGS || 'pages/settings.html';
+            window.location.href = settingsRoute;
+        } catch (e) {
+            logger.error('Failed to navigate to settings page:', e);
+            // fallback
+            window.location.href = 'pages/settings.html';
+        }
     }
 
     async handleLogout() {

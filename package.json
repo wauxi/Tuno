@@ -10,7 +10,10 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "build:css": "sass src/scss/styles.scss dist/css/styles.css --no-source-map --style=expanded",
+    "build:static": "node src/js/shared/components/include-header.js",
+    "build:prod": "npm run build:css && npm run build:static"
   },
   "repository": {
     "type": "git",
