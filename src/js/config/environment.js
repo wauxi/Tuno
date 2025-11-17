@@ -3,10 +3,29 @@
  * Uses meta tags for environment detection (proper way)
  */
 
-// Read environment from meta tag
+// Read environment from meta tag or injected env vars (Vite)
+const runtimeEnv = (typeof import.meta !== 'undefined' && import.meta && import.meta.env) ? import.meta.env : {};
+
+const getViteEnv = (key) => {
+    const viteKey = `VITE_${key}`;
+    if (Object.prototype.hasOwnProperty.call(runtimeEnv, viteKey)) {
+        return runtimeEnv[viteKey];
+    }
+    if (Object.prototype.hasOwnProperty.call(runtimeEnv, key)) {
+        return runtimeEnv[key];
+    }
+    return null;
+};
+
 const getMetaContent = (name) => {
-    const meta = document.querySelector(`meta[name="${name}"]`);
-    return meta ? meta.getAttribute('content') : null;
+    const meta = typeof document !== 'undefined'
+        ? document.querySelector(`meta[name="${name}"]`)
+        : null;
+    if (meta) {
+        return meta.getAttribute('content');
+    }
+    // allow fallback to Vite env variables (name converted to upper snake case)
+    return getViteEnv(name.replace(/-/g, '_').toUpperCase());
 };
 
 const ENV = {
@@ -19,7 +38,7 @@ const ENV = {
 // Get environment from meta tag or default
 const getCurrentEnvironment = () => {
     // Priority 1: Meta tag
-    const metaEnv = getMetaContent('app-env');
+    const metaEnv = getMetaContent('app-env') || getViteEnv('APP_ENV');
     if (metaEnv && Object.values(ENV).includes(metaEnv)) {
         return metaEnv;
     }
@@ -45,24 +64,26 @@ const getCurrentEnvironment = () => {
 const currentEnv = getCurrentEnvironment();
 
 // Environment-specific configuration
+const resolvedApiBaseUrl = getMetaContent('api-base-url') || getViteEnv('API_BASE_URL');
+
 const environmentConfig = {
     [ENV.DEVELOPMENT]: {
-        API_BASE_URL: getMetaContent('api-base-url') || 'http://ms2/src/php',
+        API_BASE_URL: resolvedApiBaseUrl || 'http://localhost:8080',
         DEBUG_MODE: true,
         ENABLE_LOGGING: true,
     },
     [ENV.STAGING]: {
-        API_BASE_URL: getMetaContent('api-base-url') || '/src/php',
+        API_BASE_URL: resolvedApiBaseUrl || '/',
         DEBUG_MODE: true,
         ENABLE_LOGGING: true,
     },
     [ENV.PRODUCTION]: {
-        API_BASE_URL: getMetaContent('api-base-url') || '/src/php',
+        API_BASE_URL: resolvedApiBaseUrl || '/',
         DEBUG_MODE: false,
         ENABLE_LOGGING: false,
     },
     [ENV.TEST]: {
-        API_BASE_URL: getMetaContent('api-base-url') || 'http://localhost:8000/php',
+        API_BASE_URL: resolvedApiBaseUrl || 'http://localhost:8000',
         DEBUG_MODE: true,
         ENABLE_LOGGING: true,
     }
