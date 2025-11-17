@@ -11,8 +11,15 @@ class Database {
         require_once __DIR__ . '/config.php';
         
         try {
+            $dsn = sprintf(
+                "mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4",
+                DB_HOST,
+                defined('DB_PORT') ? DB_PORT : 3306,
+                DB_NAME
+            );
+
             $this->connection = new PDO(
-                "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4",
+                $dsn,
                 DB_USER,
                 DB_PASS,
                 [

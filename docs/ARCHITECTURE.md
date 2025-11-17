@@ -126,6 +126,19 @@ musicboard_2/
 3. Добавить skeleton тестов в `tests/js` (Jest) и `tests/php` (PHPUnit).
 4. Поэтапная миграция на TypeScript: начать с `shared/` и `config/`.
 
+## Docker Quickstart
+
+```
+cp env.example .env
+docker compose up --build
+```
+
+- `frontend`: Vite dev-server на `http://localhost:5173`.
+- `php`: Apache + PHP API на `http://localhost:8080/src/php`.
+- `mysql`: `mysql:5.7`, данные инициализируются из `musicboard.sql` (смонтирован в `docker-entrypoint-initdb.d/`).
+- Все исходники примонтированы как volume, поэтому hot-reload работает сразу.
+- Переменные окружения можно править в `.env` (пароли, порты, `API_BASE_URL` и т.д.).
+
 Если хотите, могу сразу:
 - создать `docs/openapi.yaml` с минимальной схемой;
 - добавить пример workflow для GitHub Actions;
