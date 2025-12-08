@@ -1,21 +1,18 @@
 <?php
 define('SECURE_ACCESS', true);
 
+require_once __DIR__ . '/core/cors.php';
 require_once __DIR__ . '/core/Database.php';
 require_once __DIR__ . '/utils/Logger.php';
 require_once __DIR__ . '/validators/InputValidator.php';
 require_once __DIR__ . '/services/AlbumService.php';
 require_once __DIR__ . '/services/AuthService.php';
 
-Logger::setDevelopmentMode(true);
+$isDev = getenv('APP_ENV') !== 'production';
+Logger::setDevelopmentMode($isDev);
 Logger::setLevel(Logger::LEVEL_INFO);
 
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') exit(0);
 
 $pdo = Database::getInstance()->getConnection();
 $action = $_GET['action'] ?? ($_POST['action'] ?? null);

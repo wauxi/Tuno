@@ -1,3 +1,5 @@
+import { logger } from '../utils/Logger.js';
+
 export class UIManager {
     constructor(authService, userService) {
         this.authService = authService;
@@ -15,13 +17,22 @@ export class UIManager {
         const initialState = (typeof window !== 'undefined' && window.__INITIAL_STATE__) ? window.__INITIAL_STATE__ : null;
         const currentUser = initialState && initialState.currentUser ? initialState.currentUser : (this.authService.isUserLoggedIn() ? this.authService.getCurrentUser() : null);
         
+        logger.debug('UpdateAuthUI - currentUser:', currentUser);
+        
         if (currentUser) {
             
             if (authButtons) authButtons.style.display = 'none';
             if (userInfo) {
+                // Аватары раздаются через PHP: localhost:8080/uploads/...
+                const avatarPath = currentUser.avatar_url 
+                    ? `http://localhost:8080/${currentUser.avatar_url}` 
+                    : '/img/logo.jpg';
+                
+                logger.debug('Setting header avatar:', avatarPath);
+                
                 userInfo.innerHTML = `
                     <div class="navigation__user-avatar navigation-img">
-                        <img src="${currentUser.avatar_url || '/img/logo.jpg'}" alt="User Avatar">
+                        <img src="${avatarPath}" alt="User Avatar" draggable="false">
                         <div class="navigation__user-dropdown">
                             <button class="navigation__user-dropdown-item" data-action="view-profile">
                                 Profile
@@ -56,19 +67,62 @@ export class UIManager {
     
     updateProfileUI() {
         const profileInfo = document.querySelector('.info__profile-name');
+        const profileAvatarContainer = document.querySelector('.info__profile-avatar');
         if (!profileInfo) return;
-        
-        const userName = this.userService.getUserNameById(this.viewingUserId);
         const currentUser = this.authService.getCurrentUser();
         const isOwnProfile = currentUser && currentUser.id === this.viewingUserId;
         
-        if (this.authService.isUserLoggedIn() && currentUser) {
-            profileInfo.innerHTML = `
-                <h5 class="nickname">${userName}</h5>
-                <h3 class="name">${userName}</h3>
-                <h4 class="biografy">${isOwnProfile ? 'Ваша музыкальная активность' : 'Музыкальная активность пользователя'}</h4>
+        logger.debug('UpdateProfileUI:', {
+            currentUser,
+            isOwnProfile,
+            viewingUserId: this.viewingUserId
+        });
+        
+        // Получить данные просматриваемого пользователя
+        const viewingUser = isOwnProfile 
+            ? currentUser 
+            : this.userService.getUserById(this.viewingUserId);
+        
+        // Обновить аватар
+        if (profileAvatarContainer && viewingUser) {
+            const avatarPath = viewingUser.avatar_url 
+                ? `http://localhost:8080/${viewingUser.avatar_url}` 
+                : '/img/logo.jpg';
+            
+            logger.debug('Setting avatar:', avatarPath);
+            
+            profileAvatarContainer.innerHTML = `
+                <img src="${avatarPath}" alt="Profile Image" draggable="false">
             `;
+        }
+        
+        if (viewingUser) {
+            const bio = viewingUser.bio || 'Музыкальная активность пользователя';
+            const displayName = viewingUser.display_name || viewingUser.username;
+            const username = viewingUser.username;
+            
+            logger.debug('Setting profile:', { username, displayName, bio });
+            
+            if (isOwnProfile) {
+                profileInfo.innerHTML = `
+                    <h5 class="nickname">${username}</h5>
+                    <h3 class="name">${displayName}</h3>
+                    <h4 class="biografy">${bio}</h4>
+                `;
+            } else {
+                const switcherButtons = this.getUserSwitcherHTML();
+                profileInfo.innerHTML = `
+                    <h5 class="nickname">${username}</h5>
+                    <h3 class="name">${displayName}</h3>
+                    <h4 class="biografy">
+                        ${bio}
+                        <div class="user-switcher">${switcherButtons}</div>
+                    </h4>
+                `;
+            }
         } else {
+            // Fallback если пользователь не найден
+            const userName = this.userService.getUserNameById(this.viewingUserId);
             const switcherButtons = this.getUserSwitcherHTML();
             profileInfo.innerHTML = `
                 <h5 class="nickname">${userName}</h5>

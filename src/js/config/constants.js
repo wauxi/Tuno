@@ -6,7 +6,7 @@ export const CONFIG = {
     API: {
         BASE_URL: ENVIRONMENT.API_BASE_URL,
         ENDPOINTS: {
-            MAIN: 'index.php',
+            MAIN: 'api/index.php',
             AUTH: 'api/auth.php',
             RATINGS: 'api/ratings.php',
             USERS: 'api/users.php',
@@ -47,9 +47,9 @@ export const CONFIG = {
     
     // Routes
     ROUTES: {
-        HOME: 'index.html',
-        LOGIN: 'pages/login.html',
-        SIGNUP: 'pages/login.html?mode=register',
+        HOME: '/index.html',
+        LOGIN: '/public/pages/login.html',
+        SIGNUP: '/public/pages/login.html?mode=register',
     },
     
     // User Roles
@@ -71,6 +71,13 @@ export const CONFIG = {
     IMAGES: {
         PLACEHOLDER: 'https://via.placeholder.com/150x150/333/666?text=No+Image',
         FALLBACK: 'img/default-cover.png',
+    },
+    
+    // Breakpoints (responsive design)
+    BREAKPOINTS: {
+        MOBILE: 580,
+        TABLET: 970,
+        DESKTOP: 1200,
     },
     
     // Feature Flags
@@ -112,5 +119,6 @@ export const {
     ROLES,
     RATING,
     IMAGES,
-    FEATURES
+    FEATURES,
+    BREAKPOINTS
 } = CONFIG;

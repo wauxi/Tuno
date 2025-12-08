@@ -1,5 +1,6 @@
-import { CONFIG, UI, IMAGES } from '../../config/constants.js';
+import { CONFIG, UI, IMAGES, BREAKPOINTS } from '../../config/constants.js';
 import { getCurrentUserId } from '../auth/authUtils.js';
+import { logger } from '../../shared/utils/Logger.js';
 
 export class SearchManager {
     constructor(ratingManager) {
@@ -11,7 +12,7 @@ export class SearchManager {
         this.searchModal = null;
         this.searchModalInput = null;
         this.searchModalResults = null;
-        this.isMobile = window.innerWidth <= 580;
+        this.isMobile = window.innerWidth <= BREAKPOINTS.MOBILE;
         
         this.init();
         this.setupResizeListener();
@@ -19,7 +20,7 @@ export class SearchManager {
     
     setupResizeListener() {
         window.addEventListener('resize', () => {
-            this.isMobile = window.innerWidth <= 580;
+            this.isMobile = window.innerWidth <= BREAKPOINTS.MOBILE;
         });
     }
     

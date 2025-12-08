@@ -153,8 +153,13 @@ class Logger {
             $username,
             $success ? 'Success' : 'Failed'
         );
-        
-        self::$level($message);
+        // Safely call the static logging method by name.
+        if (method_exists(__CLASS__, $level)) {
+            self::{$level}($message, []);
+        } else {
+            // Fallback to info when method doesn't exist
+            self::info($message, []);
+        }
     }
 }
 ?>

@@ -2,6 +2,8 @@
  * EventBus - Simple event bus for decoupled communication
  * Replaces global variables and window.* patterns
  */
+import { logger } from './Logger.js';
+
 export class EventBus {
     constructor() {
         this.events = {};
@@ -65,7 +67,7 @@ export class EventBus {
             try {
                 callback(data);
             } catch (error) {
-                console.error(`Error in event handler for "${event}":`, error);
+                logger.error(`Error in event handler for "${event}":`, error);
             }
         });
     }

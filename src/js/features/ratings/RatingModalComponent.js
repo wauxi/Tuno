@@ -1,4 +1,4 @@
-import { IMAGES } from '../../config/constants.js';
+import { IMAGES, BREAKPOINTS } from '../../config/constants.js';
 
 export class RatingModal extends HTMLElement {
     constructor() {
@@ -15,7 +15,7 @@ export class RatingModal extends HTMLElement {
         this.render();
         this.attachEventListeners();
         
-        if (window.innerWidth <= 970) {
+        if (window.innerWidth <= BREAKPOINTS.TABLET) {
             document.body.classList.add('modal-open');
         }
         

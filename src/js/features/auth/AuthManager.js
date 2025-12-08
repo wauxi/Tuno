@@ -1,5 +1,6 @@
 import { setCurrentUserData, getCurrentUserData } from './authUtils.js';
 import { CONFIG, ROUTES } from '../../config/constants.js';
+import { logger } from '../../shared/utils/Logger.js';
 
 class AuthManager {
     constructor() {
@@ -105,8 +106,8 @@ class AuthManager {
             try {
                 data = JSON.parse(responseText);
             } catch (parseError) {
-                console.error('Ошибка парсинга JSON:', parseError);
-                console.log('Сырой ответ:', responseText);
+                logger.error('Ошибка парсинга JSON:', parseError);
+                logger.debug('Сырой ответ:', responseText);
                 this.showError('Сервер вернул некорректный ответ');
                 return;
             }
@@ -117,7 +118,7 @@ class AuthManager {
                     this.showSuccess('Вход выполнен успешно!');
                     
                     await new Promise(resolve => setTimeout(resolve, 1000));
-                    window.location.href = `/${ROUTES.HOME}`;
+                    window.location.href = ROUTES.HOME;
                 } else {
                     this.showSuccess('Регистрация прошла успешно! Теперь можете войти.');
                     this.isLoginMode = true;
@@ -128,7 +129,7 @@ class AuthManager {
                 this.showError(data.message || 'Произошла ошибка');
             }
         } catch (error) {
-            console.error('Ошибка:', error);
+            logger.error('Ошибка:', error);
             this.showError('Ошибка соединения с сервером');
         } finally {
             this.submitBtn.disabled = false;
@@ -139,7 +140,7 @@ class AuthManager {
     checkCurrentUser() {
         const currentUser = getCurrentUserData();
         if (currentUser) {
-            window.location.href = `/${ROUTES.HOME}`;
+            window.location.href = ROUTES.HOME;
         }
     }
     

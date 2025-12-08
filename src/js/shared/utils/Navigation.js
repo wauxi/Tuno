@@ -1,3 +1,5 @@
+import { logger } from '../utils/Logger.js';
+
 export class Navigation {
     constructor() {
         this.navLinks = document.querySelectorAll('.info__navbar a');
@@ -15,7 +17,7 @@ export class Navigation {
             link.addEventListener('click', (event) => {
                 if (link.getAttribute('href') === window.location.pathname) {
                     event.preventDefault();
-                    console.log("Вы уже на этой странице!");
+                    logger.debug("Already on this page!");
                 }
             });
         });

@@ -1,21 +1,17 @@
 <?php
 define('SECURE_ACCESS', true);
+require_once __DIR__ . '/../core/cors.php';
 require_once __DIR__ . '/../services/AuthService.php';
 require_once __DIR__ . '/../core/Database.php';
 require_once __DIR__ . '/../validators/InputValidator.php';
 require_once __DIR__ . '/../utils/Logger.php';
 
-Logger::setDevelopmentMode(true);
+// Определить окружение из переменной среды
+$isDev = getenv('APP_ENV') !== 'production';
+Logger::setDevelopmentMode($isDev);
 Logger::setLevel(Logger::LEVEL_INFO);
 
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    exit(0);
-}
 
 $pdo = Database::getInstance()->getConnection();
 
@@ -79,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     try {
         if ($action === 'login') {
-            $query = "SELECT id, username, display_name, password, role FROM users WHERE username = ?";
+            $query = "SELECT id, username, display_name, avatar_url, bio, password, role FROM users WHERE username = ?";
             $stmt = $pdo->prepare($query);
             $stmt->execute([$inputUsername]);
             
@@ -102,6 +98,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'id' => $user['id'],
                         'username' => $user['username'],
                         'display_name' => $user['display_name'],
+                        'avatar_url' => $user['avatar_url'],
+                        'bio' => $user['bio'],
                         'role' => $user['role'] ?? 'user',
                         'isAdmin' => ($user['role'] === 'admin')
                     ]

@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 try {
     $pdo = Database::getInstance()->getConnection();
     
-    $query = "SELECT id, username, display_name FROM users ORDER BY id";
+    $query = "SELECT id, username, display_name, avatar_url, bio FROM users ORDER BY id";
     $stmt = $pdo->prepare($query);
     $stmt->execute();
     $users = $stmt->fetchAll(PDO::FETCH_ASSOC);

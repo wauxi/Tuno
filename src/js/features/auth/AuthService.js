@@ -4,13 +4,12 @@ import { CONFIG } from '../../config/constants.js';
 
 export class AuthService {
     constructor() {
-        this.currentUser = null;
         this.isLoggedIn = false;
     }
     
     checkAuth() {
-        this.currentUser = getCurrentUserData();
-        this.isLoggedIn = this.currentUser !== null;
+        const userData = getCurrentUserData();
+        this.isLoggedIn = userData !== null;
     }
     
     async logout() {
@@ -29,18 +28,19 @@ export class AuthService {
         } catch (error) {
             logger.error('Logout error:', error);
         } finally {
-            this.currentUser = null;
             this.isLoggedIn = false;
             clearCurrentUser();
         }
     }
     
     isAdmin() {
-        return this.currentUser && (this.currentUser.role === 'admin' || this.currentUser.isAdmin === true);
+        const currentUser = this.getCurrentUser();
+        return currentUser && (currentUser.role === 'admin' || currentUser.isAdmin === true);
     }
     
     getCurrentUser() {
-        return this.currentUser;
+        // Всегда читать свежие данные из localStorage
+        return getCurrentUserData();
     }
     
     isUserLoggedIn() {

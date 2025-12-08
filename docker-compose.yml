@@ -1,6 +1,5 @@
 services:
   mysql:
-    platform: linux/amd64
     image: mysql:5.7
     restart: unless-stopped
     env_file:
@@ -34,6 +33,7 @@ services:
       - mysql
     volumes:
       - ./src/php:/var/www/html/src/php
+      - ./public:/var/www/html/public
     ports:
       - "${PHP_PORT:-8080}:80"
 

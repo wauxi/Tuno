@@ -4,6 +4,7 @@
  */
 
 import { DEFAULTS } from '../../config/constants.js';
+import { logger } from '../../shared/utils/Logger.js';
 
 /**
  * Получить ID текущего пользователя
@@ -33,7 +34,7 @@ export const getCurrentUserData = () => {
     try {
         return JSON.parse(userData);
     } catch (e) {
-        console.error('Failed to parse user data:', e);
+        logger.error('Failed to parse user data:', e);
         localStorage.removeItem('currentUser');
         return null;
     }

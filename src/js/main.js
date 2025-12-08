@@ -8,6 +8,7 @@ import { UserService } from './shared/services/UserService.js';
 import { UIManager } from './shared/components/UIManager.js';
 import { AlbumMenuManager } from './features/albums/AlbumMenuManager.js';
 import { UserMenuManager } from './shared/components/UserMenuManager.js';
+import { SettingsManager } from './features/settings/SettingsManager.js';
 import { eventBus, EVENTS } from './shared/utils/EventBus.js';
 import { CONFIG, DEFAULTS, UI, ROUTES, TIMEOUTS } from './config/constants.js';
 import { setCurrentUserId } from './features/auth/authUtils.js';
@@ -26,6 +27,7 @@ class MusicboardApp {
         this.dataService = null;
         this.recentlyGrid = null;
         this.listenLaterGrid = null;
+        this.favsGrid = null;
         this.ratingManager = null;
         this.searchManager = null;
 
@@ -90,6 +92,10 @@ class MusicboardApp {
             const action = target.dataset.action;
             
             switch (action) {
+                case 'home':
+                    e.preventDefault();
+                    this.goToHome();
+                    break;
                 case 'logout':
                     e.preventDefault();
                     this.logout();
@@ -111,6 +117,15 @@ class MusicboardApp {
         });
     }
     
+    goToHome() {
+        const currentUser = this.authService.getCurrentUser();
+        if (currentUser) {
+            window.location.href = `/?user=${currentUser.id}`;
+        } else {
+            window.location.href = '/';
+        }
+    }
+    
     isCurrentUserAdmin() {
         return this.authService.isAdmin();
     }
@@ -118,6 +133,12 @@ class MusicboardApp {
     initDataServices() {
         this.dataService = new DataService({
             userId: this.viewingUserId
+        });
+        
+        this.favsGrid = new AlbumGrid({
+            container: document.querySelector('.favs__list'),
+            dataType: 'favoriteAlbums',
+            dataService: this.dataService
         });
         
         this.recentlyGrid = new AlbumGrid({
@@ -165,6 +186,7 @@ class MusicboardApp {
         try {
             await this.dataService.loadData(true);
             
+            if (this.favsGrid) this.favsGrid.render();
             if (this.recentlyGrid) this.recentlyGrid.render();
             if (this.listenLaterGrid) this.listenLaterGrid.render();
             
@@ -183,6 +205,7 @@ class MusicboardApp {
         try {
             await this.dataService.loadData(false);
             
+            if (this.favsGrid) this.favsGrid.render();
             if (this.recentlyGrid) this.recentlyGrid.render();
             if (this.listenLaterGrid) this.listenLaterGrid.render();
 
@@ -317,5 +340,9 @@ class MusicboardApp {
                 configurable: false
             });
         }
+    }
+    // Initialize settings page
+    if (document.querySelector('.settings')) {
+        new SettingsManager();
     }
 })();

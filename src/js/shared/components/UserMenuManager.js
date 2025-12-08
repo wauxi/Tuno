@@ -67,22 +67,12 @@ export class UserMenuManager {
     handleViewProfile() {
         const currentUser = this.authService.getCurrentUser();
         if (currentUser) {
-            window.location.href = `/${ROUTES.HOME}?user_id=${currentUser.id}`;
+            window.location.href = `/?user=${currentUser.id}`;
         }
     }
 
     handleSettings() {
-        // Navigate to settings page
-        logger.info('Settings action clicked - navigating to settings page');
-        try {
-            // Use ROUTES.SETTINGS if available, otherwise fall back to pages/settings.html
-            const settingsRoute = ROUTES.SETTINGS || 'pages/settings.html';
-            window.location.href = settingsRoute;
-        } catch (e) {
-            logger.error('Failed to navigate to settings page:', e);
-            // fallback
-            window.location.href = 'pages/settings.html';
-        }
+        window.location.href = '/public/pages/settings.html';
     }
 
     async handleLogout() {

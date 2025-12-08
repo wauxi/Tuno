@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="app-env" content="development">
+    <meta name="api-base-url" content="http://localhost:8080">
+    <title>Settings - Musicboard</title>
+    <link rel="stylesheet" href="../../src/scss/styles.scss" />
+    <script type="module" src="../../src/js/main.js?v=3.7"></script>
+</head>
+<body>
+    <!-- @@header -->
+    
+    <main>
+        <div class="settings container">
+            <div class="settings__header">
+                <h1 class="settings__title title">Settings</h1>
+                <a href="/index.html" class="settings__back-link button">← Back to Profile</a>
+            </div>
+
+            <div class="settings__toast-container"></div>
+
+            <div class="settings__content">
+                <section class="settings__section settings__profile">
+                    <h2 class="settings__subtitle">Profile Information</h2>
+                    
+                    <div class="settings__avatar">
+                        <div class="settings__avatar-wrapper">
+                            <img class="settings__avatar-image" src="../img/user-placeholder.jpg" alt="User avatar" draggable="false" />
+                            <div class="settings__avatar-overlay">
+                                <span class="settings__avatar-text">Change</span>
+                            </div>
+                        </div>
+                        <div class="settings__avatar-controls">
+                            <input id="avatarUpload" class="settings__avatar-input" type="file" accept="image/png,image/jpeg,image/jpg,image/webp" />
+                            <label for="avatarUpload" class="settings__avatar-button button">Upload Avatar</label>
+                            <button type="button" class="settings__avatar-remove button button--secondary">Remove</button>
+                        </div>
+                        <span class="settings__hint">JPG, PNG or WEBP. Max size 2MB</span>
+                    </div>
+
+                    <form class="settings__form" id="profileForm">
+                        <div class="settings__form-group">
+                            <label for="username" class="settings__form-label">Username:</label>
+                            <input
+                                type="text"
+                                id="username"
+                                name="username"
+                                class="settings__form-input"
+                                placeholder="Enter your username"
+                                maxlength="20"
+                                required
+                            />
+                            <span class="settings__form-error" id="usernameError"></span>
+                            <span class="settings__hint">Your unique username (3-20 characters)</span>
+                        </div>
+
+                        <div class="settings__form-group">
+                            <label for="displayName" class="settings__form-label">Display Name:</label>
+                            <input
+                                type="text"
+                                id="displayName"
+                                name="displayName"
+                                class="settings__form-input"
+                                placeholder="Enter your display name"
+                                maxlength="30"
+                            />
+                            <span class="settings__hint">Your public display name (max 30 characters)</span>
+                        </div>
+
+                        <div class="settings__form-group">
+                            <label for="bio" class="settings__form-label">Bio:</label>
+                            <textarea
+                                id="bio"
+                                name="bio"
+                                class="settings__form-textarea"
+                                placeholder="Tell us about your music taste..."
+                                maxlength="150"
+                                rows="4"
+                            ></textarea>
+                            <div class="settings__counter">
+                                <span id="bioCounter">0</span>/150
+                            </div>
+                            <span class="settings__hint">A short description about you</span>
+                        </div>
+                    </form>
+                </section>
+
+                <section class="settings__section settings__favorites">
+                    <h2 class="settings__subtitle">Favorite Albums</h2>
+                    <p class="settings__description">Select up to 4 albums to display on your profile</p>
+                    
+                    <div class="settings__albums-grid">
+                        <div class="settings__album-slot" data-slot="1">
+                            <div class="settings__album-placeholder">
+                                <span class="settings__album-plus">+</span>
+                                <span class="settings__album-label">Add Album</span>
+                            </div>
+                        </div>
+                        <div class="settings__album-slot" data-slot="2">
+                            <div class="settings__album-placeholder">
+                                <span class="settings__album-plus">+</span>
+                                <span class="settings__album-label">Add Album</span>
+                            </div>
+                        </div>
+                        <div class="settings__album-slot" data-slot="3">
+                            <div class="settings__album-placeholder">
+                                <span class="settings__album-plus">+</span>
+                                <span class="settings__album-label">Add Album</span>
+                            </div>
+                        </div>
+                        <div class="settings__album-slot" data-slot="4">
+                            <div class="settings__album-placeholder">
+                                <span class="settings__album-plus">+</span>
+                                <span class="settings__album-label">Add Album</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="settings__actions">
+                    <button type="button" class="settings__save button button--primary" id="saveSettings">
+                        Save Changes
+                    </button>
+                    <button type="button" class="settings__cancel button button--secondary" id="cancelSettings">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <template id="toast-template">
+            <div class="settings__toast">
+                <span class="settings__toast-icon"></span>
+                <span class="settings__toast-message"></span>
+                <button class="settings__toast-close" aria-label="Close notification">×</button>
+            </div>
+        </template>
+
+        <template id="album-slot-filled">
+            <div class="settings__album-filled">
+                <img class="settings__album-cover" src="" alt="Album cover" draggable="false" />
+                <div class="settings__album-overlay">
+                    <button class="settings__album-remove" aria-label="Remove album">×</button>
+                </div>
+                <div class="settings__album-info">
+                    <span class="settings__album-name"></span>
+                    <span class="settings__album-artist"></span>
+                </div>
+            </div>
+        </template>
+    </main>
+</body>
+</html>
+

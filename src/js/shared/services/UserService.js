@@ -1,4 +1,5 @@
 import { CONFIG } from '../../config/constants.js';
+import { logger } from '../utils/Logger.js';
 
 export class UserService {
     constructor() {
@@ -16,7 +17,7 @@ export class UserService {
             const contentType = response.headers.get('content-type');
             if (!contentType || !contentType.includes('application/json')) {
                 const text = await response.text();
-                console.error('Response is not JSON:', text.substring(0, 200));
+                logger.error('Response is not JSON:', text.substring(0, 200));
                 throw new Error('Server returned HTML instead of JSON. Check PHP errors.');
             }
             
@@ -28,7 +29,7 @@ export class UserService {
                 this.usersCache = [];
             }
         } catch (error) {
-            console.error('Failed to load users:', error);
+            logger.error('Failed to load users:', error);
             this.usersCache = [];
         }
     }

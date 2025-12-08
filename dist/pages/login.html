@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="app-env" content="development">
+    <meta name="api-base-url" content="http://localhost:8080">
+    <title>Вход - Musicboard</title>
+    <link rel="stylesheet" href="../../src/scss/styles.scss">
+</head>
+<body>
+    <div class="auth-container">
+        <form class="auth-form" id="authForm">
+            <h2 id="formTitle">Вход в Musicboard</h2>
+            
+            <div class="error-message" id="errorMessage"></div>
+            <div class="success-message" id="successMessage"></div>
+            
+            <div class="form-group">
+                <label for="username">Никнейм:</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            
+            <div class="form-group" id="passwordGroup">
+                <label for="password">Пароль:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            
+            <div class="form-group" id="confirmPasswordGroup" style="display: none;">
+                <label for="confirmPassword">Подтвердите пароль:</label>
+                <input type="password" id="confirmPassword" name="confirmPassword">
+            </div>
+            
+            <button type="submit" class="btn" id="submitBtn">Войти</button>
+            
+            <div class="auth-switch">
+                <span id="switchText">Нет аккаунта?</span>
+                <a href="#" id="switchMode">Зарегистрироваться</a>
+            </div>
+        </form>
+    </div>
+    
+    <script type="module" src="../../src/js/features/auth/AuthManager.js"></script>
+</body>
+</html>
