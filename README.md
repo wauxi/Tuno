@@ -3,7 +3,7 @@ A full-stack music library and rating platform for tracking, organizing, and sha
 
 **Vanilla JS** | **PHP 8.2** | **MySQL 5.7** | **Vite** | **SCSS** | **Docker**
 
-🌐 **Repository**: [github.com/wauxi/music_library](https://github.com/wauxi/music_library)
+🌐 **Repository**: [github.com/wauxi/Tuno](https://github.com/wauxi/Tuno)
 
 ---
 
