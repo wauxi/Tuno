@@ -39,11 +39,14 @@ A full-stack music library and rating platform for tracking, organizing, and sha
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/wauxi/music_library.git
-cd musicboard_2
+git clone https://github.com/wauxi/Tuno.git
+cd Tuno
 
 # 2. Copy environment template
+# On macOS / Linux / WSL:
 cp env.example .env
+# On PowerShell (Windows):
+Copy-Item env.example .env
 
 # 3. Start Docker environment
 docker compose up --build
@@ -72,7 +75,7 @@ All source code is mounted for instant updates. Press `Ctrl+C` or run `docker co
 ### Backend Stack
 - **PHP 8.2** - Server-side logic and API endpoints
 - **Apache HTTP Server** - Web server in Docker container
-- **MySQL 5.7** - Relational database for data persistence
+- **MySQL 5.7 (legacy)** - Relational database for data persistence. Note: MySQL 5.7 is EOL; consider upgrading to MySQL 8.0 or MariaDB for production deployments.
 - **RESTful API** - Clean API architecture
 
 ### DevOps & Tools
