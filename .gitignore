@@ -1,1 +1,7 @@
 docs/
+node_modules/
+dist/
+.idea/
+.env
+.vscode/
+.DS_Store
