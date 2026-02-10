@@ -7,7 +7,7 @@ in a fully dockerized development environment.
 
 Vanilla JS | PHP 8.2 | MySQL 5.7 | Vite | SCSS | Docker
 
-🌐 Repository: https://github.com/wauxi/music_library
+🌐 Repository: https://github.com/wauxi/Tuno
 
 ================================================================================
 ✨ FEATURES
@@ -61,8 +61,8 @@ Prerequisites
 Installation
 ────────────────────────────────────────────────────────────────────────────
 1. Clone the repository:
-   git clone https://github.com/wauxi/music_library.git
-   cd musicboard_2
+  git clone https://github.com/wauxi/Tuno.git
+  cd Tuno
 
 2. Copy the environment template:
    cp env.example .env
@@ -417,8 +417,8 @@ Special thanks to:
 📞 SUPPORT & ISSUES
 ================================================================================
 
-Issues: https://github.com/wauxi/music_library/issues
-Repository: https://github.com/wauxi/music_library
+Issues: https://github.com/wauxi/Tuno/issues
+Repository: https://github.com/wauxi/Tuno
 
 For questions or support, please open an issue on GitHub.
 
@@ -429,6 +429,6 @@ For questions or support, please open an issue on GitHub.
 Version: 1.0.0
 Last Updated: 2026
 Author: wauxi
-Repository: https://github.com/wauxi/music_library
+Repository: https://github.com/wauxi/Tuno
 
 ================================================================================

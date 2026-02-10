@@ -175,7 +175,7 @@ For detailed documentation including architecture, design patterns, and API refe
 
 ## 🤝 Contributing
 
-Contributions, issues, and feature requests are welcome! Feel free to check the [issues page](https://github.com/wauxi/music_library/issues).
+Contributions, issues, and feature requests are welcome! Feel free to check the [issues page](https://github.com/wauxi/Tuno/issues).
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
