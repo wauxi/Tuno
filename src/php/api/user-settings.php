@@ -1,23 +1,19 @@
 <?php
 define('SECURE_ACCESS', true);
+require_once __DIR__ . '/../core/cors.php';
 require_once __DIR__ . '/../core/Database.php';
+require_once __DIR__ . '/../core/auth-middleware.php';
 require_once __DIR__ . '/../utils/Logger.php';
+require_once __DIR__ . '/../validators/InputValidator.php';
 
 Logger::setDevelopmentMode(true);
 Logger::setLevel(Logger::LEVEL_INFO);
 
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, PUT, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    exit(0);
-}
 
 $pdo = Database::getInstance()->getConnection();
 
-// GET - получить настройки пользователя
+// GET - get user settings
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $userId = $_GET['user_id'] ?? null;
     
@@ -28,7 +24,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     }
     
     try {
-        // Получить данные пользователя
+        $userId = InputValidator::validateUserId($userId);
+    } catch (InvalidArgumentException $e) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        exit;
+    }
+    
+    try {
+        // Get user data
         $stmt = $pdo->prepare("SELECT id, username, display_name, avatar_url, bio FROM users WHERE id = ?");
         $stmt->execute([$userId]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -39,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             exit;
         }
         
-        // Получить избранные альбомы
+        // Get favorite albums
         $stmt = $pdo->prepare("
             SELECT 
                 ufa.slot_number,
@@ -71,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     exit;
 }
 
-// POST - обновить настройки
+// POST - update settings
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $rawInput = file_get_contents('php://input');
     $input = json_decode($rawInput, true);
@@ -91,8 +95,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
     
+    // Verify the authenticated user matches the requested user_id
+    requireAuth($userId);
+    
     try {
-        // Проверить существование пользователя
+        $userId = InputValidator::validateUserId($userId);
+    } catch (InvalidArgumentException $e) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        exit;
+    }
+    
+    try {
+        // Check user existence
         $stmt = $pdo->prepare("SELECT id FROM users WHERE id = ?");
         $stmt->execute([$userId]);
         if (!$stmt->fetch()) {
@@ -101,34 +116,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
         
-        // Обновить профиль
+        // Update profile
         if ($action === 'update_profile') {
-            $username = trim($input['username'] ?? '');
-            $displayName = trim($input['display_name'] ?? '');
-            $bio = trim($input['bio'] ?? '');
-            
-            // Если displayName пустой, использовать username
-            if (empty($displayName)) {
-                $displayName = $username;
-            }
-            
-            // Валидация
-            if (empty($username)) {
-                echo json_encode(['success' => false, 'message' => 'Username is required']);
+            try {
+                $username = InputValidator::validateUsername($input['username'] ?? '');
+                $displayName = InputValidator::validateDisplayName($input['display_name'] ?? $username);
+                $bio = trim($input['bio'] ?? '');
+                if (mb_strlen($bio, 'UTF-8') > 500) {
+                    echo json_encode(['success' => false, 'message' => 'Bio must be less than 500 characters']);
+                    exit;
+                }
+            } catch (InvalidArgumentException $e) {
+                echo json_encode(['success' => false, 'message' => $e->getMessage()]);
                 exit;
             }
             
-            if (strlen($username) < 2) {
-                echo json_encode(['success' => false, 'message' => 'Username must be at least 2 characters']);
-                exit;
-            }
-            
-            if (strlen($bio) > 500) {
-                echo json_encode(['success' => false, 'message' => 'Bio must be less than 500 characters']);
-                exit;
-            }
-            
-            // Проверить уникальность username
+            // Check username uniqueness
             $stmt = $pdo->prepare("SELECT id FROM users WHERE username = ? AND id != ?");
             $stmt->execute([$username, $userId]);
             if ($stmt->fetch()) {
@@ -136,7 +139,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 exit;
             }
             
-            // Обновить данные
+            // Update data
             $stmt = $pdo->prepare("
                 UPDATE users 
                 SET username = ?, display_name = ?, bio = ?
@@ -153,11 +156,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
         
-        // Обновить избранные альбомы
+        // Update favorite albums
         if ($action === 'update_favorites') {
             $favorites = $input['favorites'] ?? [];
             
-            // Валидация: максимум 4 альбома
+            // Validation: maximum 4 albums
             if (count($favorites) > 4) {
                 echo json_encode(['success' => false, 'message' => 'Maximum 4 favorite albums allowed']);
                 exit;
@@ -166,11 +169,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdo->beginTransaction();
             
             try {
-                // Удалить старые избранные
+                // Delete old favorites
                 $stmt = $pdo->prepare("DELETE FROM user_favorite_albums WHERE user_id = ?");
                 $stmt->execute([$userId]);
                 
-                // Добавить новые
+                // Add new ones
                 $stmt = $pdo->prepare("
                     INSERT INTO user_favorite_albums (user_id, album_id, slot_number)
                     VALUES (?, ?, ?)
@@ -180,7 +183,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $albumId = $favorite['album_id'] ?? null;
                     $slotNumber = $favorite['slot_number'] ?? null;
                     
-                    if (!$albumId || !$slotNumber || $slotNumber < 1 || $slotNumber > 4) {
+                    try {
+                        $albumId = InputValidator::validateAlbumId($albumId);
+                        $slotNumber = InputValidator::validateInteger($slotNumber, 1, 4);
+                    } catch (InvalidArgumentException $e) {
                         $pdo->rollBack();
                         echo json_encode(['success' => false, 'message' => 'Invalid favorite album data']);
                         exit;
@@ -206,7 +212,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
         
-        // Неизвестное действие
+        // Unknown action
         http_response_code(400);
         echo json_encode(['success' => false, 'message' => 'Unknown action']);
         
@@ -219,6 +225,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-// Метод не поддерживается
+// Method not allowed
 http_response_code(405);
 echo json_encode(['success' => false, 'message' => 'Method not allowed']);

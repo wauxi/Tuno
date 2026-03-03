@@ -14,6 +14,7 @@ export class DataService {
         this.data = {
             recentActivity: null,
             listenLater: null,
+            favoriteAlbums: null,
             albums: null
         };
     }
@@ -28,6 +29,7 @@ export class DataService {
             
             const response = await fetch(url, {
                 method: 'GET',
+                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -49,7 +51,6 @@ export class DataService {
                 attempt: retryCount + 1 
             });
             
-            // Retry logic
             if (retryCount < MAX_RETRIES) {
                 const delay = Math.min(1000 * Math.pow(2, retryCount), 5000);
                 logger.info(`Retrying in ${delay}ms...`);
@@ -63,14 +64,13 @@ export class DataService {
     
     async loadData(forceRefresh = false) {
         try {
-            // Attempt to load from cache
             if (!forceRefresh) {
                 const cachedData = this.cacheManager.get(this.cacheKey);
                 
                 if (cachedData) {
                     this.data = cachedData;
                     
-                    if (!this.data.recentActivity || this.data.recentActivity.length === 0) {
+                    if (!this.data.recentActivity || !('favoriteAlbums' in this.data)) {
                         return this.loadData(true);
                     }
                     
@@ -79,16 +79,15 @@ export class DataService {
                 }
             }
             
-            // Load from server with retry logic
             logger.info('Loading data from server...');
             const serverData = await this.fetchFromApi();
             
             if (serverData && serverData.success) {
                 this.data.recentActivity = serverData.recentActivity || [];
                 this.data.listenLater = serverData.listenLater || [];
+                this.data.favoriteAlbums = serverData.favoriteAlbums || [];
                 this.data.albums = serverData.albums || [];
-                
-                // Save to cache
+            
                 this.cacheManager.set(
                     this.cacheKey, 
                     this.data, 
@@ -107,7 +106,6 @@ export class DataService {
                 forceRefresh 
             });
             
-            // Fallback to stale cache on error
             const staleCache = localStorage.getItem(this.cacheKey);
             if (staleCache) {
                 try {
@@ -121,10 +119,10 @@ export class DataService {
                 }
             }
             
-            // Return empty data as last resort
             this.data = {
                 recentActivity: [],
                 listenLater: [],
+                favoriteAlbums: [],
                 albums: []
             };
             

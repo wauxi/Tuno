@@ -1,7 +1,7 @@
 <?php
 /**
  * Database Connection Singleton
- * Централизованное управление подключением к базе данных
+ * Centralized database connection management
  */
 class Database {
     private static $instance = null;

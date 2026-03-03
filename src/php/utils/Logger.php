@@ -1,10 +1,10 @@
 <?php
 /**
  * Logger Utility
- * Централизованное логирование с уровнями
+ * Centralized logging with levels
  */
 class Logger {
-    // Уровни логирования
+    // Log levels
     const LEVEL_DEBUG = 0;
     const LEVEL_INFO = 1;
     const LEVEL_WARNING = 2;
@@ -15,21 +15,21 @@ class Logger {
     private static $isDevelopment = true;
     
     /**
-     * Установить уровень логирования
+     * Set log level
      */
     public static function setLevel($level) {
         self::$currentLevel = $level;
     }
     
     /**
-     * Установить режим (development/production)
+     * Set mode (development/production)
      */
     public static function setDevelopmentMode($isDev) {
         self::$isDevelopment = $isDev;
     }
     
     /**
-     * DEBUG - детальная информация для отладки
+     * DEBUG - detailed information for debugging
      */
     public static function debug($message, $context = []) {
         if (self::$currentLevel <= self::LEVEL_DEBUG && self::$isDevelopment) {
@@ -38,7 +38,7 @@ class Logger {
     }
     
     /**
-     * INFO - информационные сообщения
+     * INFO - informational messages
      */
     public static function info($message, $context = []) {
         if (self::$currentLevel <= self::LEVEL_INFO) {
@@ -47,7 +47,7 @@ class Logger {
     }
     
     /**
-     * WARNING - предупреждения
+     * WARNING - warnings
      */
     public static function warning($message, $context = []) {
         if (self::$currentLevel <= self::LEVEL_WARNING) {
@@ -56,7 +56,7 @@ class Logger {
     }
     
     /**
-     * ERROR - ошибки
+     * ERROR - errors
      */
     public static function error($message, $context = []) {
         if (self::$currentLevel <= self::LEVEL_ERROR) {
@@ -65,22 +65,22 @@ class Logger {
     }
     
     /**
-     * CRITICAL - критические ошибки
+     * CRITICAL - critical errors
      */
     public static function critical($message, $context = []) {
         self::log('CRITICAL', $message, $context);
     }
     
     /**
-     * Внутренний метод логирования
+     * Internal logging method
      */
     private static function log($level, $message, $context) {
         $timestamp = date('Y-m-d H:i:s');
         
-        // Форматирование контекста
+        // Format context
         $contextStr = !empty($context) ? ' ' . json_encode($context, JSON_UNESCAPED_UNICODE) : '';
         
-        // Форматирование сообщения
+        // Format message
         $logMessage = sprintf(
             '[%s] [%s] %s%s',
             $timestamp,
@@ -93,7 +93,7 @@ class Logger {
     }
     
     /**
-     * Логирование SQL запросов (только в dev)
+     * Log SQL queries (dev only)
      */
     public static function sql($query, $params = [], $executionTime = null) {
         if (!self::$isDevelopment) return;
@@ -107,7 +107,7 @@ class Logger {
     }
     
     /**
-     * Логирование API запросов
+     * Log API requests
      */
     public static function apiRequest($method, $endpoint, $params = []) {
         $context = [
@@ -123,7 +123,7 @@ class Logger {
     }
     
     /**
-     * Логирование API ответов
+     * Log API responses
      */
     public static function apiResponse($endpoint, $statusCode, $responseTime = null) {
         $context = [
@@ -143,7 +143,7 @@ class Logger {
     }
     
     /**
-     * Логирование аутентификации
+     * Log authentication events
      */
     public static function auth($action, $username, $success = true) {
         $level = $success ? 'info' : 'warning';

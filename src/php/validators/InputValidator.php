@@ -1,12 +1,12 @@
 <?php
 /**
  * Input Validator
- * Валидация и санитизация входных данных
+ * Input validation and sanitization
  */
 class InputValidator {
     
     /**
-     * Валидация целого числа
+     * Integer validation
      */
     public static function validateInteger($value, $min = null, $max = null) {
         $filtered = filter_var($value, FILTER_VALIDATE_INT);
@@ -27,16 +27,16 @@ class InputValidator {
     }
     
     /**
-     * Валидация строки
+     * String validation
      */
     public static function validateString($value, $maxLength = 255) {
         if (!is_string($value)) {
             $value = (string)$value;
         }
         
-        $sanitized = htmlspecialchars(trim($value), ENT_QUOTES, 'UTF-8');
+        $sanitized = trim($value);
         
-        if (strlen($sanitized) > $maxLength) {
+        if (mb_strlen($sanitized, 'UTF-8') > $maxLength) {
             throw new InvalidArgumentException("String too long (max: $maxLength)");
         }
         
@@ -44,7 +44,7 @@ class InputValidator {
     }
     
     /**
-     * Валидация email
+     * Email validation
      */
     public static function validateEmail($email) {
         $filtered = filter_var($email, FILTER_VALIDATE_EMAIL);
@@ -57,7 +57,7 @@ class InputValidator {
     }
     
     /**
-     * Валидация URL
+     * URL validation
      */
     public static function validateUrl($url) {
         $filtered = filter_var($url, FILTER_VALIDATE_URL);
@@ -70,7 +70,7 @@ class InputValidator {
     }
     
     /**
-     * Валидация даты
+     * Date validation
      */
     public static function validateDate($date) {
         $d = DateTime::createFromFormat('Y-m-d', $date);
@@ -83,42 +83,42 @@ class InputValidator {
     }
     
     /**
-     * Валидация boolean
+     * Boolean validation
      */
     public static function validateBoolean($value) {
         return filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) !== null;
     }
     
     /**
-     * Валидация ID альбома
+     * Album ID validation
      */
     public static function validateAlbumId($albumId) {
         return self::validateInteger($albumId, 1);
     }
     
     /**
-     * Валидация ID пользователя
+     * User ID validation
      */
     public static function validateUserId($userId) {
         return self::validateInteger($userId, 1);
     }
     
     /**
-     * Валидация рейтинга
+     * Rating validation
      */
     public static function validateRating($rating) {
         return self::validateInteger($rating, 0, 10);
     }
     
     /**
-     * Валидация ID рейтинга
+     * Rating ID validation
      */
     public static function validateRatingId($ratingId) {
         return self::validateInteger($ratingId, 1);
     }
     
     /**
-     * Валидация имени пользователя
+     * Username validation
      */
     public static function validateUsername($username) {
         $username = self::validateString($username, 50);
@@ -135,7 +135,7 @@ class InputValidator {
     }
     
     /**
-     * Валидация пароля
+     * Password validation
      */
     public static function validatePassword($password) {
         if (strlen($password) < 6) {
@@ -150,7 +150,7 @@ class InputValidator {
     }
     
     /**
-     * Валидация отображаемого имени
+     * Display name validation
      */
     public static function validateDisplayName($displayName) {
         $name = self::validateString($displayName, 100);
@@ -163,21 +163,21 @@ class InputValidator {
     }
     
     /**
-     * Валидация названия альбома
+     * Album name validation
      */
     public static function validateAlbumName($albumName) {
         return self::validateString($albumName, 255);
     }
     
     /**
-     * Валидация имени исполнителя
+     * Artist name validation
      */
     public static function validateArtistName($artistName) {
         return self::validateString($artistName, 255);
     }
     
     /**
-     * Валидация жанра
+     * Genre validation
      */
     public static function validateGenre($genre) {
         if (empty($genre)) {
@@ -187,7 +187,7 @@ class InputValidator {
     }
     
     /**
-     * Валидация названия песни
+     * Song name validation
      */
     public static function validateSongName($songName) {
         if (empty($songName)) {
@@ -197,7 +197,7 @@ class InputValidator {
     }
     
     /**
-     * Валидация отзыва
+     * Review validation
      */
     public static function validateReview($review) {
         if (empty($review)) {
@@ -207,7 +207,7 @@ class InputValidator {
     }
     
     /**
-     * Валидация Spotify ссылки
+     * Spotify link validation
      */
     public static function validateSpotifyLink($link) {
         $link = self::validateUrl($link);

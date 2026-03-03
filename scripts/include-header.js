@@ -13,9 +13,7 @@ async function readAllHtml(dir) {
     const res = path.join(dir, d.name);
     if (d.isDirectory()) {
       // skip dist, node_modules and partials directories
-      if (d.name === 'dist' || d.name === 'node_modules' || d.name === 'src' && d.name === 'partials') continue;
-      // also skip node_modules and dist
-      if (d.name === 'dist' || d.name === 'node_modules' || d.name === 'partials') continue;
+      if (['dist', 'node_modules', 'partials'].includes(d.name)) continue;
       files.push(...await readAllHtml(res));
     } else {
       if (res.endsWith('.html')) files.push(res);

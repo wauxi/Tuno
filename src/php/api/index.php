@@ -1,21 +1,16 @@
 <?php
 define('SECURE_ACCESS', true);
 
+require_once __DIR__ . '/../core/cors.php';
 require_once __DIR__ . '/../core/Database.php';
 require_once __DIR__ . '/../utils/Logger.php';
 require_once __DIR__ . '/../validators/InputValidator.php';
 require_once __DIR__ . '/../services/AlbumService.php';
-require_once __DIR__ . '/../services/AuthService.php';
 
 Logger::setDevelopmentMode(true);
 Logger::setLevel(Logger::LEVEL_INFO);
 
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') exit(0);
 
 $pdo = Database::getInstance()->getConnection();
 $action = $_GET['action'] ?? ($_POST['action'] ?? null);
@@ -30,7 +25,7 @@ try {
                 exit;
             }
 
-            // Основная страница (RecentActivity + ListenLater)
+            // Main page (RecentActivity + ListenLater)
             $userId = isset($_GET['user_id'])
                 ? InputValidator::validateUserId($_GET['user_id'])
                 : 1;
@@ -42,27 +37,33 @@ try {
             exit;
 
         case 'POST':
+            // PHP doesn't parse JSON body into $_POST — doing it manually
+            $body = json_decode(file_get_contents('php://input'), true) ?? [];
+            if (!$action) {
+                $action = $body['action'] ?? null;
+            }
+
             if (!$action) {
                 http_response_code(400);
-                echo json_encode(['success' => false, 'message' => 'Не указано действие']);
+                echo json_encode(['success' => false, 'message' => 'No action specified']);
                 exit;
             }
 
             if ($action === 'remove_from_listen_later') {
                 require_once __DIR__ . '/admin.php';
-                removeFromListenLater($pdo);
+                removeFromListenLater($pdo, $body);
                 exit;
             }
 
             echo json_encode([
                 'success' => false,
-                'message' => 'Неизвестное POST-действие: ' . $action
+                'message' => 'Unknown POST action: ' . $action
             ]);
             break;
 
         default:
             http_response_code(405);
-            echo json_encode(['error' => 'Метод не поддерживается']);
+            echo json_encode(['error' => 'Method not allowed']);
     }
 
 } catch (Exception $e) {

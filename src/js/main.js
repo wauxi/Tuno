@@ -1,4 +1,3 @@
-import { Navigation } from './shared/utils/Navigation.js';
 import { DataService } from './shared/services/DataService.js';
 import { AlbumGrid } from './features/albums/AlbumGrid.js';
 import { RatingManager } from './features/ratings/RatingManager.js';
@@ -10,7 +9,7 @@ import { AlbumMenuManager } from './features/albums/AlbumMenuManager.js';
 import { UserMenuManager } from './shared/components/UserMenuManager.js';
 import { SettingsManager } from './features/settings/SettingsManager.js';
 import { eventBus, EVENTS } from './shared/utils/EventBus.js';
-import { CONFIG, DEFAULTS, UI, ROUTES, TIMEOUTS } from './config/constants.js';
+import { CONFIG, DEFAULTS, UI, ROUTES } from './config/constants.js';
 import { setCurrentUserId } from './features/auth/authUtils.js';
 import { logger } from './shared/utils/Logger.js';
 import './features/ratings/RatingModalComponent.js';
@@ -36,10 +35,8 @@ class MusicboardApp {
     }
     
     async init() {
-        // Check auth synchronously (reads from localStorage)
         this.authService.checkAuth();
         
-        // Load users asynchronously
         await this.userService.loadUsers();
         
         this.viewingUserId = this.getUserIdFromUrl() || 
@@ -49,36 +46,25 @@ class MusicboardApp {
         this.uiManager.setViewingUserId(this.viewingUserId);
         this.uiManager.updateUI();
         
-        new Navigation();
+        this.initActiveNavLink();
         this.initDataServices();
         
-        // Initialize user menu
         this.userMenuManager = new UserMenuManager(this.authService);
         this.userMenuManager.initUserMenu();
         
-        // Load data asynchronously
         await this.loadData();
         
-        // Update URL (synchronous)
         this.updateUrl();
         
-        // Setup event delegation (synchronous)
         this.setupEventDelegation();
         
-        // Initialize rating system (synchronous)
         this.initRatingSystem();
         
         if (this.ratingManager) {
             this.searchManager = new SearchManager(this.ratingManager);
             this.albumMenuManager = new AlbumMenuManager(this.authService, this.ratingManager, this.dataService);
-
-            try {
-                await this.waitForElement('.album-menu', TIMEOUTS.ELEMENT_WAIT);
-                this.albumMenuManager.initAlbumMenus();
-            } catch (err) {
-                logger.warn('Timed out waiting for .album-menu elements, attempting to init menus anyway');
-                this.albumMenuManager.initAlbumMenus();
-            }
+            this.albumMenuManager.initAlbumMenus();
+            this.albumMenuManager.refreshMenuVisibility();
         } else {
             logger.error('RatingManager not found for SearchManager');
         }
@@ -117,6 +103,15 @@ class MusicboardApp {
         });
     }
     
+    initActiveNavLink() {
+        const path = window.location.pathname;
+        document.querySelectorAll('.info__navbar a').forEach(link => {
+            if (link.getAttribute('href') === path) {
+                link.classList.add('button--active');
+            }
+        });
+    }
+    
     goToHome() {
         const currentUser = this.authService.getCurrentUser();
         if (currentUser) {
@@ -130,6 +125,14 @@ class MusicboardApp {
         return this.authService.isAdmin();
     }
     
+    getRatingManager() {
+        return this.ratingManager;
+    }
+    
+    getCurrentUser() {
+        return this.authService.getCurrentUser();
+    }
+
     initDataServices() {
         this.dataService = new DataService({
             userId: this.viewingUserId
@@ -138,7 +141,8 @@ class MusicboardApp {
         this.favsGrid = new AlbumGrid({
             container: document.querySelector('.favs__list'),
             dataType: 'favoriteAlbums',
-            dataService: this.dataService
+            dataService: this.dataService,
+            template: 'favs-item'
         });
         
         this.recentlyGrid = new AlbumGrid({
@@ -171,7 +175,7 @@ class MusicboardApp {
             }
             
             if (this.albumMenuManager) {
-                this.albumMenuManager.initAlbumMenus();
+                this.albumMenuManager.refreshMenuVisibility();
             }
         });
         
@@ -191,7 +195,7 @@ class MusicboardApp {
             if (this.listenLaterGrid) this.listenLaterGrid.render();
             
             if (this.albumMenuManager) {
-                this.albumMenuManager.initAlbumMenus();
+                this.albumMenuManager.refreshMenuVisibility();
             }
             
             logger.success('Data refreshed successfully without page reload');
@@ -214,34 +218,6 @@ class MusicboardApp {
         }
     }
 
-    async waitForElement(selector, timeout = TIMEOUTS.ELEMENT_WAIT) {
-        const start = performance.now();
-
-        const existing = document.querySelector(selector);
-        if (existing) return existing;
-
-        return await new Promise((resolve, reject) => {
-            const observer = new MutationObserver(() => {
-                const el = document.querySelector(selector);
-                if (el) {
-                    observer.disconnect();
-                    clearTimeout(timer);
-                    resolve(el);
-                }
-            });
-
-            observer.observe(document.documentElement || document.body, {
-                childList: true,
-                subtree: true
-            });
-
-            const timer = setTimeout(() => {
-                observer.disconnect();
-                reject(new Error(`Element ${selector} not found within ${timeout}ms`));
-            }, timeout);
-        });
-    }
-    
     getUserIdFromUrl() {
         const urlParams = new URLSearchParams(window.location.search);
         const userIdParam = urlParams.get('user');
@@ -282,12 +258,11 @@ class MusicboardApp {
     
     async refreshRatings() {
         if (this.albumMenuManager) {
-            this.albumMenuManager.initAlbumMenus();
+            this.albumMenuManager.refreshMenuVisibility();
         }
     }
 }
 
-// IIFE для изоляции кода
 (function() {
     'use strict';
     
@@ -303,7 +278,6 @@ class MusicboardApp {
         });
     });
 
-    // Минимальное публичное API
     const publicAPI = {
         switchUser: (userId) => eventBus.emit(EVENTS.USER_SWITCH, { userId }),
         goToLogin: () => eventBus.emit(EVENTS.NAVIGATE, { route: 'login' }),
@@ -315,16 +289,13 @@ class MusicboardApp {
         isCurrentUserAdmin: () => appInstance?.isCurrentUserAdmin()
     };
     
-    // Экспорт только необходимого минимума
     if (typeof window !== 'undefined') {
-        // Публичное API
         Object.defineProperty(window, 'musicboardApp', {
             value: Object.freeze(publicAPI),
             writable: false,
             configurable: false
         });
-        
-        // Debug API только в development
+
         const isDev = window.location.hostname === 'localhost' || 
                      window.location.hostname === '127.0.0.1' || 
                      window.location.hostname === 'ms2';
@@ -341,7 +312,7 @@ class MusicboardApp {
             });
         }
     }
-    // Initialize settings page
+
     if (document.querySelector('.settings')) {
         new SettingsManager();
     }

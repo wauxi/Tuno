@@ -38,17 +38,17 @@ class AuthManager {
     
     updateUI() {
         if (this.isLoginMode) {
-            this.formTitle.textContent = 'Вход в Musicboard';
-            this.submitBtn.textContent = 'Войти';
-            this.switchText.textContent = 'Нет аккаунта?';
-            this.switchMode.textContent = 'Зарегистрироваться';
+            this.formTitle.textContent = 'Log in to Musicboard';
+            this.submitBtn.textContent = 'Log in';
+            this.switchText.textContent = "Don't have an account?";
+            this.switchMode.textContent = 'Sign up';
             this.confirmPasswordGroup.style.display = 'none';
             document.getElementById('confirmPassword').required = false;
         } else {
-            this.formTitle.textContent = 'Регистрация в Musicboard';
-            this.submitBtn.textContent = 'Зарегистрироваться';
-            this.switchText.textContent = 'Уже есть аккаунт?';
-            this.switchMode.textContent = 'Войти';
+            this.formTitle.textContent = 'Sign up for Musicboard';
+            this.submitBtn.textContent = 'Sign up';
+            this.switchText.textContent = 'Already have an account?';
+            this.switchMode.textContent = 'Log in';
             this.confirmPasswordGroup.style.display = 'block';
             document.getElementById('confirmPassword').required = true;
         }
@@ -63,27 +63,27 @@ class AuthManager {
         const confirmPassword = document.getElementById('confirmPassword').value;
         
         if (!username || !password) {
-            this.showError('Заполните все поля');
+            this.showError('Please fill in all fields');
             return;
         }
         
         if (!this.isLoginMode && password !== confirmPassword) {
-            this.showError('Пароли не совпадают');
+            this.showError('Passwords do not match');
             return;
         }
         
         if (username.length < 2) {
-            this.showError('Никнейм должен содержать минимум 2 символа');
+            this.showError('Username must be at least 2 characters');
             return;
         }
         
-        if (password.length < 3) {
-            this.showError('Пароль должен содержать минимум 3 символа');
+        if (password.length < 6) {
+            this.showError('Password must be at least 6 characters');
             return;
         }
         
         this.submitBtn.disabled = true;
-        this.submitBtn.textContent = 'Обработка...';
+        this.submitBtn.textContent = 'Processing...';
         
         const requestData = {
             action: this.isLoginMode ? 'login' : 'register',
@@ -94,6 +94,7 @@ class AuthManager {
         try {
             const response = await fetch(this.apiUrl, {
                 method: 'POST',
+                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -106,34 +107,34 @@ class AuthManager {
             try {
                 data = JSON.parse(responseText);
             } catch (parseError) {
-                logger.error('Ошибка парсинга JSON:', parseError);
-                logger.debug('Сырой ответ:', responseText);
-                this.showError('Сервер вернул некорректный ответ');
+                logger.error('JSON parsing error:', parseError);
+                logger.debug('Raw response:', responseText);
+                this.showError('Server returned an invalid response');
                 return;
             }
             
             if (data.success) {
                 if (this.isLoginMode) {
                     setCurrentUserData(data.user);
-                    this.showSuccess('Вход выполнен успешно!');
+                    this.showSuccess('Login successful!');
                     
                     await new Promise(resolve => setTimeout(resolve, 1000));
                     window.location.href = ROUTES.HOME;
                 } else {
-                    this.showSuccess('Регистрация прошла успешно! Теперь можете войти.');
+                    this.showSuccess('Registration successful! You can now log in.');
                     this.isLoginMode = true;
                     this.updateUI();
                     this.form.reset();
                 }
             } else {
-                this.showError(data.message || 'Произошла ошибка');
+                this.showError(data.message || 'An error occurred');
             }
         } catch (error) {
-            logger.error('Ошибка:', error);
-            this.showError('Ошибка соединения с сервером');
+            logger.error('Error:', error);
+            this.showError('Connection error with server');
         } finally {
             this.submitBtn.disabled = false;
-            this.submitBtn.textContent = this.isLoginMode ? 'Войти' : 'Зарегистрироваться';
+            this.submitBtn.textContent = this.isLoginMode ? 'Log in' : 'Sign up';
         }
     }
     

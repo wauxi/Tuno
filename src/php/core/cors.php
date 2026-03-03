@@ -1,33 +1,27 @@
 <?php
 /**
  * CORS Configuration
- * Централизованная настройка Cross-Origin Resource Sharing
+ * Centralized Cross-Origin Resource Sharing configuration
  */
 
-// Разрешенные origins (whitelist)
+// Allowed origins (whitelist)
 $allowedOrigins = [
     'http://localhost:5173',        // Vite dev server
     'http://localhost:3000',        // Alternative dev port
     'http://127.0.0.1:5173',
     'http://ms2',                   // Docker alias
-    'https://yourdomain.com'        // Production (замените на реальный домен)
+    'https://yourdomain.com'        // Production (replace with your actual domain)
 ];
 
-// Получить origin из запроса
+// Get origin from request
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 
-// Проверить если origin в whitelist
-if (in_array($origin, $allowedOrigins)) {
+// Check if origin is in whitelist — whitelist only, no fallback
+if (in_array($origin, $allowedOrigins, true)) {
     header("Access-Control-Allow-Origin: $origin");
-} else {
-    // В development режиме - разрешить все (ТОЛЬКО для разработки!)
-    $isDev = getenv('APP_ENV') !== 'production';
-    if ($isDev && $origin) {
-        header("Access-Control-Allow-Origin: $origin");
-    }
 }
 
-// Остальные CORS headers
+// Other CORS headers
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 header('Access-Control-Allow-Credentials: true');

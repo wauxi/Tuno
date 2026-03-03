@@ -82,9 +82,6 @@ export const CONFIG = {
     
     // Feature Flags
     FEATURES: {
-        ENABLE_SEARCH: true,
-        ENABLE_CACHE: true,
-        ENABLE_NOTIFICATIONS: true,
         DEBUG_MODE: ENVIRONMENT.DEBUG_MODE,
     }
 };

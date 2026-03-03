@@ -28,6 +28,8 @@ services:
       DB_USER: ${MYSQL_USER}
       DB_PASS: ${MYSQL_PASSWORD}
       DB_PORT: 3306
+      APP_ENV: ${APP_ENV:-development}
+      LASTFM_API_KEY: ${LASTFM_API_KEY:-}
       PHP_DISPLAY_ERRORS: ${PHP_DISPLAY_ERRORS:-0}
     depends_on:
       - mysql

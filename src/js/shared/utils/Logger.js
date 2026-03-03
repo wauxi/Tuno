@@ -16,7 +16,7 @@ const LOG_LEVELS = {
 
 class Logger {
     constructor() {
-        this.level = ENVIRONMENT.DEBUG_MODE ? LOG_LEVELS.DEBUG : LOG_LEVELS.WARN;
+        this.level = ENVIRONMENT.DEBUG_MODE ? LOG_LEVELS.WARN : LOG_LEVELS.ERROR;
     }
 
     /**

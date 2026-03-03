@@ -1,6 +1,7 @@
 import { CONFIG, UI, IMAGES, BREAKPOINTS } from '../../config/constants.js';
 import { getCurrentUserId } from '../auth/authUtils.js';
-import { logger } from '../../shared/utils/Logger.js';
+import { escapeHtml } from '../../shared/utils/sanitize.js';
+import { showToast } from '../../shared/utils/toast.js';
 
 export class SearchManager {
     constructor(ratingManager) {
@@ -45,18 +46,18 @@ export class SearchManager {
         const closeBtn = this.searchModal.querySelector('.search-modal__close');
         const overlay = this.searchModal.querySelector('.search-modal__overlay');
         
-        // Открытие модалки при клике на кнопку поиска на мобильных
+        // Open modal on search button click on mobile
         this.searchContainer.addEventListener('click', (e) => {
             if (this.isMobile && !e.target.closest('.navigation__search-input')) {
                 this.openModal();
             }
         });
         
-        // Закрытие модалки
+        // Close modal
         closeBtn?.addEventListener('click', () => this.closeModal());
         overlay?.addEventListener('click', () => this.closeModal());
         
-        // Поиск в модалке
+        // Search in modal
         this.searchModalInput?.addEventListener('input', (e) => {
             const query = e.target.value.trim();
             
@@ -74,7 +75,7 @@ export class SearchManager {
             }, UI.SEARCH_DEBOUNCE);
         });
         
-        // Закрытие по ESC
+        // Close on ESC
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && this.searchModal?.classList.contains('active')) {
                 this.closeModal();
@@ -88,7 +89,7 @@ export class SearchManager {
             this.searchModal.style.display = 'block';
             document.body.style.overflow = 'hidden';
             
-            // Фокус на поле ввода
+            // Focus on input field
             setTimeout(() => {
                 this.searchModalInput?.focus();
             }, 100);
@@ -101,7 +102,7 @@ export class SearchManager {
             this.searchModal.style.display = 'none';
             document.body.style.overflow = '';
             
-            // Очистка
+            // Clear
             if (this.searchModalInput) {
                 this.searchModalInput.value = '';
             }
@@ -152,144 +153,99 @@ export class SearchManager {
     
     async performModalSearch(query) {
         try {
-            const url = `${CONFIG.API.BASE_URL}/${CONFIG.API.ENDPOINTS.MAIN}?action=search&q=${encodeURIComponent(query)}`;
-            
-            const response = await fetch(url);
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            const data = await response.json();
-            
+            const data = await this._fetchSearch(query);
             if (data.success) {
-                this.displayModalResults(data.albums, query);
+                this._renderResults(this.searchModalResults, data.albums, query, (result) => {
+                    this.handleRateAlbum(result);
+                    this.closeModal();
+                });
             } else {
-                this.showModalError('Ошибка поиска: ' + (data.error || 'Неизвестная ошибка'));
+                this._renderError(this.searchModalResults, 'Search error: ' + (data.error || 'Unknown error'));
             }
         } catch (error) {
-            this.showModalError('Ошибка соединения');
-        }
-    }
-    
-    displayModalResults(albums, query) {
-        if (albums.length === 0) {
-            this.searchModalResults.innerHTML = `
-                <div class="search-results__empty">
-                    <span class="search-results__icon">🔍</span>
-                    <p>Ничего не найдено для "${query}"</p>
-                </div>
-            `;
-        } else {
-            const resultsHtml = albums.map(album => this.getAlbumResultTemplate(album)).join('');
-            this.searchModalResults.innerHTML = `
-                <div class="search-results__header">
-                    Результаты поиска (${albums.length})
-                </div>
-                <div class="search-results__list">
-                    ${resultsHtml}
-                </div>
-            `;
-            
-            this.bindModalResultEvents();
-        }
-    }
-    
-    bindModalResultEvents() {
-        const results = this.searchModalResults.querySelectorAll('.search-result');
-        
-        results.forEach(result => {
-            result.addEventListener('click', () => {
-                this.handleRateAlbum(result);
-                this.closeModal();
-            });
-        });
-    }
-    
-    showModalError(message) {
-        if (this.searchModalResults) {
-            this.searchModalResults.innerHTML = `
-                <div class="search-results__error">
-                    <span class="search-results__icon">⚠️</span>
-                    <p>${message}</p>
-                </div>
-            `;
+            this._renderError(this.searchModalResults, 'Connection error');
         }
     }
     
     async performSearch(query) {
         try {
-            const url = `${CONFIG.API.BASE_URL}/${CONFIG.API.ENDPOINTS.MAIN}?action=search&q=${encodeURIComponent(query)}`;
-            
-            const response = await fetch(url);
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            const data = await response.json();
-            
+            const data = await this._fetchSearch(query);
             if (data.success) {
-                this.displayResults(data.albums, query);
+                this._renderResults(this.searchResults, data.albums, query, (result) => {
+                    this.handleRateAlbum(result);
+                });
             } else {
-                this.showError('Ошибка поиска: ' + (data.error || 'Неизвестная ошибка'));
+                this._renderError(this.searchResults, 'Search error: ' + (data.error || 'Unknown error'));
             }
         } catch (error) {
-            this.showError('Ошибка соединения');
+            this._renderError(this.searchResults, 'Connection error');
         }
-    }
-    
-    displayResults(albums, query) {
-        if (albums.length === 0) {
-            this.searchResults.innerHTML = `
-                <div class="search-results__empty">
-                    <span class="search-results__icon">🔍</span>
-                    <p>Ничего не найдено для "${query}"</p>
-                </div>
-            `;
-        } else {
-            const resultsHtml = albums.map(album => this.getAlbumResultTemplate(album)).join('');
-            this.searchResults.innerHTML = `
-                <div class="search-results__header">
-                    Результаты поиска (${albums.length})
-                </div>
-                <div class="search-results__list">
-                    ${resultsHtml}
-                </div>
-            `;
-            
-            this.bindResultEvents();
-        }
-        
         this.showResults();
     }
     
-    getAlbumResultTemplate(album) {
-        const albumJson = JSON.stringify(album).replace(/"/g, '&quot;');
-        
-        return `
-            <div class="search-result" data-album-id="${album.album_id}" data-album="${albumJson}">
-                <img src="${album.coverUrl}" 
-                     alt="${album.album_name}" 
-                     class="search-result__cover"
-                     onerror="this.src='${IMAGES.PLACEHOLDER}'">
-                <div class="search-result__info">
-                    <h4 class="search-result__album">${album.album_name}</h4>
-                    <p class="search-result__artist">${album.artist}</p>
-                    ${album.genre ? `<span class="search-result__genre">${album.genre}</span>` : ''}
+    async _fetchSearch(query) {
+        const url = `${CONFIG.API.BASE_URL}/${CONFIG.API.ENDPOINTS.MAIN}?action=search&q=${encodeURIComponent(query)}`;
+        const response = await fetch(url, { credentials: 'include' });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    }
+    
+    _renderResults(container, albums, query, onItemClick) {
+        if (albums.length === 0) {
+            container.innerHTML = `
+                <div class="search-results__empty">
+                    <span class="search-results__icon">🔍</span>
+                    <p>No results found for "${escapeHtml(query)}"</p>
                 </div>
+            `;
+            return;
+        }
+        
+        const resultsHtml = albums.map(album => this.getAlbumResultTemplate(album)).join('');
+        container.innerHTML = `
+            <div class="search-results__header">
+                Search results (${albums.length})
+            </div>
+            <div class="search-results__list">
+                ${resultsHtml}
+            </div>
+        `;
+        
+        container.querySelectorAll('.search-result').forEach(result => {
+            result.addEventListener('click', () => onItemClick(result));
+        });
+    }
+    
+    _renderError(container, message) {
+        container.innerHTML = `
+            <div class="search-results__error">
+                <span class="search-results__icon">⚠️</span>
+                <p>${escapeHtml(message)}</p>
             </div>
         `;
     }
     
-    bindResultEvents() {
-        const results = this.searchResults.querySelectorAll('.search-result');
+    getAlbumResultTemplate(album) {
+        const albumJson = JSON.stringify(album).replace(/"/g, '&quot;');
+        const name = escapeHtml(album.album_name);
+        const artist = escapeHtml(album.artist);
+        const genre = escapeHtml(album.genre);
         
-        results.forEach(result => {
-            result.addEventListener('click', () => {
-                this.handleRateAlbum(result);
-            });
-        });
+        return `
+            <div class="search-result" data-album-id="${album.album_id}" data-album="${albumJson}">
+                <img src="${album.coverUrl}" 
+                     alt="${name}" 
+                     class="search-result__cover"
+                     onerror="this.src='${IMAGES.PLACEHOLDER}'">
+                <div class="search-result__info">
+                    <h4 class="search-result__album">${name}</h4>
+                    <p class="search-result__artist">${artist}</p>
+                    ${album.genre ? `<span class="search-result__genre">${genre}</span>` : ''}
+                </div>
+            </div>
+        `;
     }
     
     async handleRateAlbum(resultElement) {
@@ -300,11 +256,13 @@ export class SearchManager {
             let existingRating = null;
             
             try {
-                const ratingResponse = await fetch(`${CONFIG.API.BASE_URL}/${CONFIG.API.ENDPOINTS.RATINGS}?album_id=${albumData.album_id}&user_id=${currentUserId}`);
+                const ratingResponse = await fetch(`${CONFIG.API.BASE_URL}/${CONFIG.API.ENDPOINTS.RATINGS}?album_id=${albumData.album_id}&user_id=${currentUserId}`, {
+                    credentials: 'include'
+                });
                 const ratingData = await ratingResponse.json();
                 existingRating = ratingData.success ? ratingData.rating : null;
             } catch (error) {
-                // Нет существующей оценки
+                // No existing rating
             }
             
             this.ratingManager.showRatingModalComponent({
@@ -320,7 +278,7 @@ export class SearchManager {
             this.clearSearch();
             
         } catch (error) {
-            alert('Ошибка при открытии формы оценки');
+            showToast('Error opening rating form', 'error');
         }
     }
     
@@ -333,18 +291,6 @@ export class SearchManager {
     hideResults() {
         if (this.searchResults) {
             this.searchResults.style.display = 'none';
-        }
-    }
-    
-    showError(message) {
-        if (this.searchResults) {
-            this.searchResults.innerHTML = `
-                <div class="search-results__error">
-                    <span class="search-results__icon">⚠️</span>
-                    <p>${message}</p>
-                </div>
-            `;
-            this.showResults();
         }
     }
     

@@ -1,4 +1,6 @@
 import { IMAGES, BREAKPOINTS } from '../../config/constants.js';
+import { escapeHtml } from '../../shared/utils/sanitize.js';
+import { showToast } from '../../shared/utils/toast.js';
 
 export class RatingModal extends HTMLElement {
     constructor() {
@@ -41,8 +43,8 @@ export class RatingModal extends HTMLElement {
     }
     
     render() {
-        const albumName = this.getAttribute('album-name') || 'Unknown Album';
-        const artist = this.getAttribute('artist') || 'Unknown Artist';
+        const albumName = escapeHtml(this.getAttribute('album-name') || 'Unknown Album');
+        const artist = escapeHtml(this.getAttribute('artist') || 'Unknown Artist');
         const coverUrl = this.getAttribute('cover-url') || IMAGES.FALLBACK;
         
         this.innerHTML = `
@@ -85,7 +87,7 @@ export class RatingModal extends HTMLElement {
                                             <h4 class="rating-form__h4">Must listen</h4>
                                             <label class="checkbox-item">
                                                 <input type="checkbox" id="mustListen" name="must_listen">
-                                                <span>Все должны это послушать</span>
+                                                <span>Everyone must listen to this</span>
                                                 <div class="checkbox-icon unchecked" data-checkbox="mustListen">
                                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"    
                                                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">                                          
@@ -99,7 +101,7 @@ export class RatingModal extends HTMLElement {
                                             <h4 class="rating-form__h4">Would re-listen</h4>
                                             <label class="checkbox-item">
                                                 <input type="checkbox" id="wouldRelisten" name="would_relisten">
-                                                <span>Переслушал бы</span>
+                                                <span>Would re-listen</span>
                                                 <div class="checkbox-icon unchecked" data-checkbox="wouldRelisten">
                                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                         <polyline points="17 1 21 5 17 9"></polyline>
@@ -310,7 +312,7 @@ export class RatingModal extends HTMLElement {
         const data = this.getFormData();
         
         if (data.rating === 0) {
-            alert('Please select a rating!');
+            showToast('Please select a rating!', 'warning');
             return;
         }
         
@@ -341,6 +343,9 @@ export class RatingModal extends HTMLElement {
     }
     
     close() {
+        if (this._removing) return;
+        this._removing = true;
+
         const modal = this.querySelector('.rating-modal');
         if (modal) {
             modal.classList.remove('show');
@@ -354,11 +359,14 @@ export class RatingModal extends HTMLElement {
             composed: true
         }));
         
-        modal.addEventListener('transitionend', () => {
-            this.remove();
-        }, { once: true });
-        
-        setTimeout(() => this.remove(), 350);
+        const doRemove = () => {
+            if (this.parentNode) this.remove();
+        };
+
+        if (modal) {
+            modal.addEventListener('transitionend', doRemove, { once: true });
+        }
+        setTimeout(doRemove, 350);
     }
     
     setRating(ratingData) {

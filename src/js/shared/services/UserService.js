@@ -8,7 +8,9 @@ export class UserService {
     
     async loadUsers() {
         try {
-            const response = await fetch(`${CONFIG.API.BASE_URL}/${CONFIG.API.ENDPOINTS.USERS}`);
+            const response = await fetch(`${CONFIG.API.BASE_URL}/${CONFIG.API.ENDPOINTS.USERS}`, {
+                credentials: 'include'
+            });
             
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);

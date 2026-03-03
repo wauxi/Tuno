@@ -1,18 +1,18 @@
 /**
- * Утилита для работы с рейтингами
+ * Rating utilities
  */
 export class RatingUtils {
     /**
-     * Генерирует HTML звезд для отображения рейтинга
-     * @param {number} currentRating - Рейтинг по 10-балльной шкале
-     * @param {boolean} showHalfStars - Показывать ли половинки звезд
-     * @returns {string} HTML строка со звездами
+     * Generates star rating HTML for display
+     * @param {number} currentRating - Rating on a 10-point scale
+     * @param {boolean} showHalfStars - Whether to show half stars
+     * @returns {string} HTML string with stars
      */
     static generateStarRating(currentRating, showHalfStars = true) {
         const fiveStarRating = currentRating / 2;
         
         if (fiveStarRating === 0) {
-            return '<span class="no-rating">Нет оценки</span>';
+            return '<span class="no-rating">No rating</span>';
         }
 
         let starsHtml = '';
@@ -32,9 +32,9 @@ export class RatingUtils {
     }
 
     /**
-     * Генерирует интерактивные звезды для выбора рейтинга
-     * @param {number} currentRating - Текущий рейтинг по 10-балльной шкале
-     * @returns {string} HTML строка с интерактивными звездами
+     * Generates interactive stars for rating selection
+     * @param {number} currentRating - Current rating on a 10-point scale
+     * @returns {string} HTML string with interactive stars
      */
     static generateInteractiveStarRating(currentRating) {
         const fiveStarRating = currentRating ? currentRating / 2 : 0;
@@ -53,18 +53,18 @@ export class RatingUtils {
     }
 
     /**
-     * Конвертирует 5-звездочный рейтинг в 10-балльную шкалу
-     * @param {number} fiveStarRating - Рейтинг от 0 до 5
-     * @returns {number} Рейтинг от 0 до 10
+     * Converts a 5-star rating to a 10-point scale
+     * @param {number} fiveStarRating - Rating from 0 to 5
+     * @returns {number} Rating from 0 to 10
      */
     static fiveStarToTenScale(fiveStarRating) {
         return fiveStarRating * 2;
     }
 
     /**
-     * Конвертирует 10-балльную шкалу в 5-звездочный рейтинг
-     * @param {number} tenScaleRating - Рейтинг от 0 до 10
-     * @returns {number} Рейтинг от 0 до 5
+     * Converts a 10-point scale to a 5-star rating
+     * @param {number} tenScaleRating - Rating from 0 to 10
+     * @returns {number} Rating from 0 to 5
      */
     static tenScaleToFiveStar(tenScaleRating) {
         return tenScaleRating / 2;

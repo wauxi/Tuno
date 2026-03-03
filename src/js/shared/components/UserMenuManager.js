@@ -1,5 +1,6 @@
 import { logger } from '../utils/Logger.js';
 import { ROUTES } from '../../config/constants.js';
+import { showToast } from '../utils/toast.js';
 
 export class UserMenuManager {
     constructor(authService) {
@@ -26,20 +27,6 @@ export class UserMenuManager {
                 e.preventDefault();
                 e.stopPropagation();
                 this.handleMenuItemClick(dropdownItem);
-            }
-        });
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!userAvatar.contains(e.target) && !userDropdown.contains(e.target)) {
-                this.closeDropdown();
-            }
-        });
-
-        // Close dropdown when escape key is pressed
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                this.closeDropdown();
             }
         });
 
@@ -78,18 +65,10 @@ export class UserMenuManager {
     async handleLogout() {
         try {
             await this.authService.logout();
-            window.location.href = `/${ROUTES.HOME}`;
+            window.location.href = ROUTES.HOME;
         } catch (error) {
             logger.error('Error during logout:', error);
-            alert('Error logging out. Please try again.');
-        }
-    }
-
-    closeDropdown() {
-        const userDropdown = document.querySelector('.navigation__user-dropdown');
-        if (userDropdown) {
-            // Don't use inline styles - let CSS handle visibility
-            // Just remove any active state if you add one later
+            showToast('Logout failed. Please try again.', 'error');
         }
     }
 }

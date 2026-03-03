@@ -16,20 +16,20 @@ class CoverService {
     }
 
     /**
-     * Получить обложку альбома с гибридным подходом
-     * Приоритет: manual > spotify > lastfm
+     * Get album cover with a hybrid approach
+     * Priority: manual > spotify > lastfm
      */
     public function getCoverUrl($albumId, $albumData = null) {
         if (!$albumId) return null;
 
         try {
-            // 1. Проверить кэш
+            // 1. Check cache
             $cached = $this->getCachedCover($albumId);
             if ($cached) {
                 return $cached['cover_url'];
             }
 
-            // 2. Попробовать Spotify
+            // 2. Try Spotify
             if (!empty($albumData['spotify_link'])) {
                 $spotifyId = $this->extractSpotifyId($albumData['spotify_link']);
                 if ($spotifyId) {
@@ -41,7 +41,7 @@ class CoverService {
                 }
             }
 
-            // 3. Попробовать Last.fm
+            // 3. Try Last.fm
             if ($albumData && !empty($albumData['artist']) && !empty($albumData['album_name'])) {
                 $lastfmCover = $this->getLastfmCover($albumData['artist'], $albumData['album_name']);
                 if ($lastfmCover) {
@@ -59,43 +59,43 @@ class CoverService {
     }
 
     /**
-     * Загрузить собственную обложку (админ)
+     * Upload custom cover (admin)
      */
     public function uploadCustomCover($albumId, $file) {
         if (!isset($file['tmp_name']) || !isset($file['name'])) {
-            throw new Exception("Некорректный формат файла");
+            throw new Exception("Invalid file format");
         }
 
-        // Валидация
+        // Validation
         $allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
         $maxSize = 5 * 1024 * 1024; // 5MB
 
         $mime = mime_content_type($file['tmp_name']);
         if (!in_array($mime, $allowedMimes)) {
-            throw new Exception("Формат не поддерживается. Используйте JPG, PNG или WebP");
+            throw new Exception("Unsupported format. Use JPG, PNG, or WebP");
         }
 
         if ($file['size'] > $maxSize) {
-            throw new Exception("Файл слишком большой. Максимум 5MB");
+            throw new Exception("File is too large. Maximum 5MB");
         }
 
-        // Создать директорию
+        // Create directory
         $uploadsDir = dirname(__DIR__) . '/uploads/covers';
         if (!is_dir($uploadsDir)) {
             mkdir($uploadsDir, 0755, true);
         }
 
-        // Сохранить файл
+        // Save file
         $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
         $filename = "album_{$albumId}_" . time() . "." . $ext;
         $filepath = $uploadsDir . '/' . $filename;
         $relativePath = 'uploads/covers/' . $filename;
 
         if (!move_uploaded_file($file['tmp_name'], $filepath)) {
-            throw new Exception("Ошибка сохранения файла");
+            throw new Exception("Error saving file");
         }
 
-        // Сохранить в БД
+        // Save to database
         $query = "
             INSERT INTO album_covers_cache (album_id, spotify_id, cover_url, source, updated_at)
             VALUES (?, NULL, ?, ?, NOW())
@@ -110,14 +110,14 @@ class CoverService {
         return [
             'success' => true,
             'cover_url' => $relativePath,
-            'message' => 'Обложка загружена'
+            'message' => 'Cover uploaded'
         ];
     }
 
     /**
-     * Batch-загрузка обложек для нескольких альбомов (решение N+1)
-     * @param array $albumIds - массив ID альбомов
-     * @return array - ассоциативный массив [album_id => cover_url]
+     * Batch cover loading for multiple albums (N+1 solution)
+     * @param array $albumIds - array of album IDs
+     * @return array - associative array [album_id => cover_url]
      */
     public function getBatchCoverUrls($albumIds) {
         if (empty($albumIds)) return [];
@@ -136,15 +136,15 @@ class CoverService {
         $results = [];
         $now = time();
         
-        // Обработать закэшированные обложки
+        // Process cached covers
         foreach ($cached as $row) {
-            // Manual uploads всегда валидны
+            // Manual uploads are always valid
             if ($row['source'] === self::SOURCE_MANUAL) {
                 $results[$row['album_id']] = $row['cover_url'];
                 continue;
             }
             
-            // Проверить TTL для Spotify/Last.fm
+            // Check TTL for Spotify/Last.fm
             $updatedTime = strtotime($row['updated_at']);
             if (($now - $updatedTime) < $this->cacheLifetime) {
                 $results[$row['album_id']] = $row['cover_url'];
@@ -155,7 +155,7 @@ class CoverService {
     }
 
     /**
-     * Получить из кэша
+     * Get from cache
      */
     private function getCachedCover($albumId) {
         $query = "
@@ -169,12 +169,12 @@ class CoverService {
 
         if (!$cached) return null;
 
-        // Manual uploads не имеют TTL
+        // Manual uploads have no TTL
         if ($cached['source'] === self::SOURCE_MANUAL) {
             return $cached;
         }
 
-        // Проверить TTL для Spotify/Last.fm
+        // Check TTL for Spotify/Last.fm
         $updatedTime = strtotime($cached['updated_at']);
         $now = time();
         
@@ -186,17 +186,17 @@ class CoverService {
     }
 
     /**
-     * Сохранить в кэш
+     * Save to cache
      */
     private function cacheCover($albumId, $spotifyId, $coverUrl, $source) {
-        // Сначала проверить, есть ли уже запись
+        // First check if a record already exists
         $checkQuery = "SELECT id FROM album_covers_cache WHERE album_id = ?";
         $checkStmt = $this->pdo->prepare($checkQuery);
         $checkStmt->execute([$albumId]);
         $existing = $checkStmt->fetch(PDO::FETCH_ASSOC);
         
         if ($existing) {
-            // Обновить существующую запись
+            // Update existing record
             $updateQuery = "
                 UPDATE album_covers_cache 
                 SET spotify_id = ?, cover_url = ?, source = ?, updated_at = NOW()
@@ -205,7 +205,7 @@ class CoverService {
             $stmt = $this->pdo->prepare($updateQuery);
             return $stmt->execute([$spotifyId, $coverUrl, $source, $albumId]);
         } else {
-            // Вставить новую запись
+            // Insert new record
             $insertQuery = "
                 INSERT INTO album_covers_cache (album_id, spotify_id, cover_url, source, updated_at)
                 VALUES (?, ?, ?, ?, NOW())
@@ -216,7 +216,7 @@ class CoverService {
     }
 
     /**
-     * Получить из Spotify
+     * Get from Spotify
      */
     private function getSpotifyCover($spotifyId) {
         if (!$spotifyId) return null;
@@ -251,7 +251,7 @@ class CoverService {
     }
 
     /**
-     * Получить из Last.fm
+     * Get from Last.fm
      */
     public function getLastfmCover($artist, $albumName) {
         if (!$artist || !$albumName) return null;
@@ -285,7 +285,7 @@ class CoverService {
             $data = json_decode($response, true);
 
             if (isset($data['album']['image']) && is_array($data['album']['image'])) {
-                // Найти самое большое изображение
+                // Find the largest image
                 $images = $data['album']['image'];
                 foreach (array_reverse($images) as $image) {
                     if (isset($image['#text']) && !empty($image['#text'])) {
@@ -303,7 +303,7 @@ class CoverService {
     }
 
     /**
-     * Извлечь Spotify ID
+     * Extract Spotify ID
      */
     private function extractSpotifyId($url) {
         if (!$url) return null;
@@ -316,7 +316,7 @@ class CoverService {
     }
 
     /**
-     * Удалить обложку
+     * Delete cover
      */
     public function deleteCover($albumId) {
         $query = "SELECT cover_url, source FROM album_covers_cache WHERE album_id = ?";
@@ -337,7 +337,7 @@ class CoverService {
     }
 
     /**
-     * Очистить кэш (кроме manual)
+     * Clear cache (except manual)
      */
     public function refreshCache($albumId = null) {
         if ($albumId) {

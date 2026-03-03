@@ -1,17 +1,22 @@
 <?php
 define('SECURE_ACCESS', true);
 require_once __DIR__ . '/../core/cors.php';
-require_once __DIR__ . '/../services/AuthService.php';
 require_once __DIR__ . '/../core/Database.php';
+require_once __DIR__ . '/../core/RateLimiter.php';
 require_once __DIR__ . '/../validators/InputValidator.php';
 require_once __DIR__ . '/../utils/Logger.php';
 
-// Определить окружение из переменной среды
+// Determine environment from env variable
 $isDev = getenv('APP_ENV') !== 'production';
 Logger::setDevelopmentMode($isDev);
 Logger::setLevel(Logger::LEVEL_INFO);
 
 header('Content-Type: application/json; charset=utf-8');
+
+// Secure session settings
+ini_set('session.cookie_httponly', 1);
+ini_set('session.cookie_samesite', 'Lax');
+ini_set('session.use_strict_mode', 1);
 
 $pdo = Database::getInstance()->getConnection();
 
@@ -21,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if (!$input || !isset($input['action'])) {
         http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Некорректные данные']);
+        echo json_encode(['success' => false, 'message' => 'Invalid data']);
         exit;
     }
     
@@ -30,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'logout') {
         session_start();
         
-        $logoutUser = $_SESSION['username'] ?? 'неизвестный';
+        $logoutUser = $_SESSION['username'] ?? 'unknown';
         
         $_SESSION = array();
         
@@ -48,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         echo json_encode([
             'success' => true,
-            'message' => 'Выход выполнен успешно'
+            'message' => 'Logout successful'
         ]);
         exit;
     }
@@ -57,18 +62,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $inputPassword = $input['password'] ?? '';
     
     if ($action === 'login' || $action === 'register') {
+        // Rate limiting: 10 login attempts / 15 min, 5 register attempts / 1 hour
+        $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+        $rateLimitKey = "auth_{$action}_{$ip}";
+        $maxAttempts = ($action === 'login') ? 10 : 5;
+        $window = ($action === 'login') ? 900 : 3600;
+        
+        if (!RateLimiter::check($rateLimitKey, $maxAttempts, $window)) {
+            http_response_code(429);
+            echo json_encode(['success' => false, 'message' => 'Too many attempts. Please try again later.']);
+            exit;
+        }
+        
+        RateLimiter::hit($rateLimitKey, $window);
+        
         if (empty($inputUsername) || empty($inputPassword)) {
-            echo json_encode(['success' => false, 'message' => 'Заполните все поля']);
+            echo json_encode(['success' => false, 'message' => 'All fields are required']);
             exit;
         }
         
-        if (strlen($inputUsername) < 2) {
-            echo json_encode(['success' => false, 'message' => 'Никнейм должен содержать минимум 2 символа']);
-            exit;
-        }
-        
-        if (strlen($inputPassword) < 3) {
-            echo json_encode(['success' => false, 'message' => 'Пароль должен содержать минимум 3 символа']);
+        try {
+            $inputUsername = InputValidator::validateUsername($inputUsername);
+            InputValidator::validatePassword($inputPassword);
+        } catch (InvalidArgumentException $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
             exit;
         }
     }
@@ -82,6 +99,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
             
             if ($user && password_verify($inputPassword, $user['password'])) {
+                RateLimiter::reset($rateLimitKey);
+                
                 session_start();
                 session_regenerate_id(true); 
                 
@@ -93,7 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 echo json_encode([
                     'success' => true,
-                    'message' => 'Успешный вход',
+                    'message' => 'Login successful',
                     'user' => [
                         'id' => $user['id'],
                         'username' => $user['username'],
@@ -106,7 +125,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ]);
             } else {
                 Logger::auth("login", $inputUsername, false);
-                echo json_encode(['success' => false, 'message' => 'Неверный никнейм или пароль']);
+                echo json_encode(['success' => false, 'message' => 'Invalid username or password']);
             }
             
         } elseif ($action === 'register') {
@@ -115,7 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $checkStmt->execute([$inputUsername]);
             
             if ($checkStmt->fetch()) {
-                echo json_encode(['success' => false, 'message' => 'Пользователь с таким никнеймом уже существует']);
+                echo json_encode(['success' => false, 'message' => 'Username already exists']);
                 exit;
             }
             
@@ -129,19 +148,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             echo json_encode([
                 'success' => true,
-                'message' => 'Регистрация прошла успешно'
+                'message' => 'Registration successful'
             ]);
             
         } else {
-            echo json_encode(['success' => false, 'message' => 'Неизвестное действие: ' . $action]);
+            echo json_encode(['success' => false, 'message' => 'Unknown action: ' . $action]);
         }
         
     } catch(PDOException $e) {
         Logger::error("Database error in auth-api", ['error' => $e->getMessage()]);
-        echo json_encode(['success' => false, 'message' => 'Ошибка сервера']);
+        echo json_encode(['success' => false, 'message' => 'Server error']);
     }
     
 } else {
-    echo json_encode(['success' => false, 'message' => 'Метод не поддерживается']);
+    echo json_encode(['success' => false, 'message' => 'Method not allowed']);
 }
 ?>

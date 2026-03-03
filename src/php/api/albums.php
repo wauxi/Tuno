@@ -28,7 +28,7 @@ function handleSearchAlbums($pdo) {
     } catch (Exception $e) {
         Logger::error('Search error', ['error' => $e->getMessage()]);
         http_response_code(500);
-        echo json_encode(['success' => false, 'error' => 'Ошибка выполнения поиска']);
+        echo json_encode(['success' => false, 'error' => 'Search execution error']);
     }
 }
 
@@ -38,16 +38,18 @@ function handleGetAlbumsOverview($pdo, $userId) {
 
         $recentActivity = $albumService->getRecentActivity($userId, 4);
         $listenLater = $albumService->getListenLater($userId, 8);
+        $favoriteAlbums = $albumService->getFavoriteAlbums($userId);
 
         echo json_encode([
             'success' => true,
             'recentActivity' => $recentActivity,
-            'listenLater' => $listenLater
+            'listenLater' => $listenLater,
+            'favoriteAlbums' => $favoriteAlbums
         ]);
 
     } catch (Exception $e) {
         Logger::error('Overview error', ['error' => $e->getMessage()]);
         http_response_code(500);
-        echo json_encode(['error' => 'Ошибка загрузки данных']);
+        echo json_encode(['success' => false, 'error' => 'Error loading data']);
     }
 }

@@ -68,7 +68,6 @@
         margin-top: 0.5rem;
     }
 
-    // Avatar section
     &__avatar {
         display: flex;
         justify-content: center;
@@ -133,7 +132,6 @@
         font-size: 0.9rem;
     }
 
-    // Form elements
     &__form {
         display: flex;
         flex-direction: column;
@@ -203,14 +201,12 @@
         margin-top: 0.5rem;
     }
 
-    // Favorites block inside profile section
     &__favorites-block {
         margin-top: 3rem;
         padding-top: 2rem;
         border-top: 1px solid var(--color-gray);
     }
 
-    // Favorite albums grid
     &__albums-grid {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
@@ -343,7 +339,6 @@
         white-space: nowrap;
     }
 
-    // Action buttons
     &__actions {
         display: flex;
         gap: 1rem;
@@ -373,7 +368,6 @@
         }
     }
 
-    // Toast notifications
     &__toast-container {
         position: fixed;
         top: 20px;
@@ -449,4 +443,169 @@
         transform: translateX(0);
         opacity: 1;
     }
+}
+
+.settings__picker-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.75);
+    z-index: 500;
+    @include flex-center;
+    padding: 1rem;
+}
+
+.settings__picker {
+    background-color: var(--color-dark-alt);
+    border: var(--border);
+    border-radius: var(--border-radius);
+    width: 100%;
+    max-width: 540px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+
+    @include mobile {
+        max-height: 90vh;
+    }
+}
+
+.settings__picker-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    border-bottom: var(--border);
+    flex-shrink: 0;
+}
+
+.settings__picker-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--color-light);
+}
+
+.settings__picker-close {
+    @include flex-center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    color: var(--color-light-secondary);
+    font-size: 1.5rem;
+    cursor: pointer;
+    border-radius: var(--border-radius-small);
+    transition: color var(--transition-duration), background-color var(--transition-duration);
+
+    &:hover {
+        color: var(--color-light);
+        background-color: var(--color-gray);
+    }
+}
+
+.settings__picker-search {
+    padding: 1rem 1.5rem;
+    border-bottom: var(--border);
+    flex-shrink: 0;
+}
+
+.settings__picker-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--color-gray);
+    border-radius: var(--border-radius-small);
+    background-color: var(--color-dark);
+    color: var(--color-light);
+    font-family: var(--font-family);
+    font-size: 1rem;
+    transition: border-color var(--transition-duration);
+
+    &:focus {
+        outline: none;
+        border-color: var(--color-accent);
+    }
+
+    &::placeholder {
+        color: var(--color-muted);
+    }
+}
+
+.settings__picker-results {
+    overflow-y: auto;
+    flex: 1;
+    padding: 0.5rem;
+
+    &::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: var(--color-dark);
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: var(--color-gray);
+        border-radius: 3px;
+    }
+}
+
+.settings__picker-hint {
+    text-align: center;
+    color: var(--color-light-secondary);
+    font-size: 0.9rem;
+    padding: 2rem 1rem;
+    margin: 0;
+}
+
+.settings__picker-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    border: none;
+    background: transparent;
+    color: var(--color-light);
+    cursor: pointer;
+    border-radius: var(--border-radius-small);
+    text-align: left;
+    transition: background-color var(--transition-duration);
+    font-family: var(--font-family);
+
+    &:hover {
+        background-color: var(--color-gray);
+    }
+}
+
+.settings__picker-item-cover {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--border-radius-small);
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.settings__picker-item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+}
+
+.settings__picker-item-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.settings__picker-item-artist {
+    font-size: 0.8rem;
+    color: var(--color-light-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }

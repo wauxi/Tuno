@@ -1,34 +1,31 @@
 /**
  * Unified Cache Manager
- * Единая стратегия кэширования для всего приложения - только localStorage
+ * Unified caching strategy for the entire application - localStorage only
  */
 
 import { logger } from './Logger.js';
+import { CACHE_CONSTANTS } from '../../config/constants.js';
 
 const CACHE_CONFIG = {
-    // TTL для разных типов данных
     TTL: {
-        USER_DATA: 3600000,      // 1 час для данных пользователя
-        ALBUM_COVERS: 2592000000, // 30 дней для обложек
-        SEARCH_RESULTS: 300000,   // 5 минут для результатов поиска
+        USER_DATA: CACHE_CONSTANTS.USER_DATA_TTL,
+        ALBUM_COVERS: CACHE_CONSTANTS.COVER_TTL,
+        SEARCH_RESULTS: 300000,
     },
-    
-    // Префиксы ключей
     PREFIX: {
         USER: 'user_',
         COVERS: 'covers_',
         SEARCH: 'search_',
-        TIMESTAMP: 'ts_',
     }
 };
 
 export class CacheManager {
     constructor() {
-        this.storage = localStorage; // Только localStorage, никакого sessionStorage
+        this.storage = localStorage; // Only localStorage, no sessionStorage
     }
     
     /**
-     * Установить значение в кэш
+     * Set a value in the cache
      */
     set(key, value, ttl = CACHE_CONFIG.TTL.USER_DATA) {
         try {
@@ -47,7 +44,7 @@ export class CacheManager {
     }
     
     /**
-     * Получить значение из кэша
+     * Get a value from the cache
      */
     get(key) {
         try {
@@ -57,7 +54,7 @@ export class CacheManager {
             const item = JSON.parse(itemStr);
             const now = Date.now();
             
-            // Проверить TTL
+            // Check TTL
             if (now - item.timestamp > item.ttl) {
                 this.delete(key);
                 return null;
@@ -71,14 +68,14 @@ export class CacheManager {
     }
     
     /**
-     * Проверить, есть ли валидный кэш
+     * Check if a valid cache entry exists
      */
     has(key) {
         return this.get(key) !== null;
     }
     
     /**
-     * Удалить ключ из кэша
+     * Delete a key from the cache
      */
     delete(key) {
         try {
@@ -91,7 +88,7 @@ export class CacheManager {
     }
     
     /**
-     * Очистить кэш по префиксу
+     * Clear cache by prefix
      */
     clearByPrefix(prefix) {
         try {
@@ -109,7 +106,7 @@ export class CacheManager {
     }
     
     /**
-     * Инвалидировать кэш пользователя
+     * Invalidate user cache
      */
     invalidateUserCache(userId) {
         const prefix = `${CACHE_CONFIG.PREFIX.USER}${userId}_`;
@@ -117,7 +114,7 @@ export class CacheManager {
     }
     
     /**
-     * Получить размер кэша в байтах
+     * Get cache size in bytes
      */
     getSize() {
         let size = 0;
@@ -130,7 +127,7 @@ export class CacheManager {
     }
     
     /**
-     * Получить размер кэша в человекочитаемом формате
+     * Get cache size in human-readable format
      */
     getSizeFormatted() {
         const bytes = this.getSize();
@@ -143,7 +140,7 @@ export class CacheManager {
 // Singleton instance
 export const cacheManager = new CacheManager();
 
-// Helper functions для обратной совместимости
+// Helper functions for backward compatibility
 export const getItem = (key) => cacheManager.get(key);
 export const setItem = (key, value, ttl) => cacheManager.set(key, value, ttl);
 export const removeItem = (key) => cacheManager.delete(key);

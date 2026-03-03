@@ -1,13 +1,13 @@
 /**
  * Auth Utilities
- * Утилиты для работы с аутентификацией
+ * Utilities for working with authentication
  */
 
 import { DEFAULTS } from '../../config/constants.js';
 import { logger } from '../../shared/utils/Logger.js';
 
 /**
- * Получить ID текущего пользователя
+ * Get the current user's ID
  * @returns {number} User ID
  */
 export const getCurrentUserId = () => {
@@ -16,7 +16,7 @@ export const getCurrentUserId = () => {
 };
 
 /**
- * Установить ID текущего пользователя
+ * Set the current user's ID
  * @param {number} userId - User ID
  */
 export const setCurrentUserId = (userId) => {
@@ -24,7 +24,7 @@ export const setCurrentUserId = (userId) => {
 };
 
 /**
- * Получить данные текущего пользователя
+ * Get the current user's data
  * @returns {Object|null} User data or null
  */
 export const getCurrentUserData = () => {
@@ -41,7 +41,7 @@ export const getCurrentUserData = () => {
 };
 
 /**
- * Сохранить данные пользователя
+ * Save user data
  * @param {Object} userData - User data
  */
 export const setCurrentUserData = (userData) => {
@@ -49,7 +49,7 @@ export const setCurrentUserData = (userData) => {
 };
 
 /**
- * Очистить данные пользователя
+ * Clear user data
  */
 export const clearCurrentUser = () => {
     localStorage.removeItem('currentUser');
@@ -57,7 +57,7 @@ export const clearCurrentUser = () => {
 };
 
 /**
- * Проверить залогинен ли пользователь
+ * Check if the user is logged in
  * @returns {boolean}
  */
 export const isUserLoggedIn = () => {

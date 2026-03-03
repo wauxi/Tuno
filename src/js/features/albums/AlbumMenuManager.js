@@ -1,5 +1,6 @@
 import { CONFIG, UI } from '../../config/constants.js';
 import { logger } from '../../shared/utils/Logger.js';
+import { showToast } from '../../shared/utils/toast.js';
 
 export class AlbumMenuManager {
     constructor(authService, ratingManager, dataService) {
@@ -9,89 +10,79 @@ export class AlbumMenuManager {
     }
     
     initAlbumMenus() {
-        const albumMenus = document.querySelectorAll('.album-menu');
-        
-        albumMenus.forEach(menu => {
-            const newMenu = menu.cloneNode(true);
-            menu.parentNode.replaceChild(newMenu, menu);
-            
-            this.attachMenuHandlers(newMenu);
+        // Only bind delegation once
+        if (this._delegated) return;
+        this._delegated = true;
+
+        document.addEventListener('click', (e) => {
+            const actionBtn = e.target.closest('[data-action]');
+            if (!actionBtn) return;
+
+            const menu = actionBtn.closest('.album-menu');
+            if (!menu) return;
+
+            const albumElement = menu.closest('[data-album-id]');
+            if (!albumElement) return;
+
+            const albumId = parseInt(albumElement.dataset.albumId);
+            const action = actionBtn.dataset.action;
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            switch (action) {
+                case 'write-review':
+                    if (this.authService.isUserLoggedIn()) {
+                        this.handleWriteReview(albumId, albumElement);
+                    }
+                    break;
+                case 'remove-listen-later':
+                    if (this.authService.isUserLoggedIn() && this.authService.isAdmin()) {
+                        this.handleRemoveFromListenLater(albumId, albumElement);
+                    }
+                    break;
+                case 'go-to-album':
+                    this.handleGoToAlbum(albumElement);
+                    break;
+            }
+        });
+
+        // Dropdown positioning via event delegation
+        document.addEventListener('mouseenter', (e) => {
+            const trigger = e.target.closest('.album-menu__trigger');
+            if (!trigger) return;
+            const menu = trigger.closest('.album-menu');
+            if (!menu || menu.classList.contains('album-menu--side')) return;
+            this.adjustDropdownPosition(menu.querySelector('.album-menu__dropdown'));
+        }, true);
+    }
+
+    adjustDropdownPosition(dropdown) {
+        if (!dropdown) return;
+        requestAnimationFrame(() => {
+            const rect = dropdown.getBoundingClientRect();
+            const windowWidth = window.innerWidth;
+            dropdown.classList.remove('align-left', 'align-right');
+            if (rect.left < 10) {
+                dropdown.classList.add('align-left');
+            } else if (rect.right > windowWidth - 10) {
+                dropdown.classList.add('align-right');
+            }
         });
     }
-    
-    attachMenuHandlers(menu) {
-        const albumElement = menu.closest('[data-album-id]');
-        if (!albumElement) return;
 
-        const albumId = parseInt(albumElement.dataset.albumId);
-        const dropdown = menu.querySelector('.album-menu__dropdown');
-
-        if (dropdown) {
-            const trigger = menu.querySelector('.album-menu__trigger');
-            const isSideMenu = menu.classList.contains('album-menu--side');
-            
-            const adjustDropdownPosition = () => {
-                if (isSideMenu) return;
-                
-                requestAnimationFrame(() => {
-                    const rect = dropdown.getBoundingClientRect();
-                    const windowWidth = window.innerWidth;
-                    const padding = 10;
-                    
-                    dropdown.classList.remove('align-left', 'align-right');
-                    
-                    if (rect.left < padding) {
-                        dropdown.classList.add('align-left');
-                    } else if (rect.right > windowWidth - padding) {
-                        dropdown.classList.add('align-right');
-                    }
-                });
-            };
-
-            if (trigger) {
-                trigger.addEventListener('mouseenter', adjustDropdownPosition);
-                trigger.addEventListener('focus', adjustDropdownPosition);
-                trigger.addEventListener('click', adjustDropdownPosition);
+    refreshMenuVisibility() {
+        // Hide admin/auth-only buttons for non-eligible users
+        document.querySelectorAll('.album-menu').forEach(menu => {
+            const writeReviewBtn = menu.querySelector('[data-action="write-review"]');
+            const removeBtn = menu.querySelector('[data-action="remove-listen-later"]');
+            if (writeReviewBtn) {
+                writeReviewBtn.style.display = this.authService.isUserLoggedIn() ? '' : 'none';
             }
-            menu.addEventListener('mouseenter', adjustDropdownPosition);
-            dropdown.addEventListener('transitionend', adjustDropdownPosition);
-        }
-
-        const writeReviewBtn = menu.querySelector('[data-action="write-review"]');
-        const removeBtn = menu.querySelector('[data-action="remove-listen-later"]');
-        const spotifyBtn = menu.querySelector('[data-action="go-to-album"]');
-        
-        if (writeReviewBtn) {
-            if (!this.authService.isUserLoggedIn()) {
-                writeReviewBtn.style.display = 'none';
-            } else {
-                writeReviewBtn.addEventListener('click', async (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    await this.handleWriteReview(albumId, albumElement);
-                });
+            if (removeBtn) {
+                removeBtn.style.display = (this.authService.isUserLoggedIn() && this.authService.isAdmin()) ? '' : 'none';
             }
-        }
-        
-        if (removeBtn) {
-            if (!this.authService.isUserLoggedIn() || !this.authService.isAdmin()) {
-                removeBtn.style.display = 'none';
-            } else {
-                removeBtn.addEventListener('click', async (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    await this.handleRemoveFromListenLater(albumId, albumElement);
-                });
-            }
-        }
-        
-        if (spotifyBtn) {
-            spotifyBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                this.handleGoToAlbum(albumElement);
-            });
-        }
+        });
     }
     
     async getExistingRating(albumId) {
@@ -99,7 +90,9 @@ export class AlbumMenuManager {
             const currentUser = this.authService.getCurrentUser();
             if (!currentUser) return null;
             
-            const response = await fetch(`${CONFIG.API.BASE_URL}/${CONFIG.API.ENDPOINTS.RATINGS}?album_id=${albumId}&user_id=${currentUser.id}`);
+            const response = await fetch(`${CONFIG.API.BASE_URL}/${CONFIG.API.ENDPOINTS.RATINGS}?album_id=${albumId}&user_id=${currentUser.id}`, {
+                credentials: 'include'
+            });
             const result = await response.json();
             
             if (result.success && result.rating) {
@@ -121,21 +114,22 @@ export class AlbumMenuManager {
     
     async handleRemoveFromListenLater(albumId, albumElement) {
         if (!this.authService.isAdmin()) {
-            alert('У вас нет прав для удаления альбомов из базы данных. Требуются права администратора.');
+            showToast('You do not have permission to delete albums from the database. Admin rights required.', 'error');
             return;
         }
         
-        const albumName = albumElement.querySelector('.listen-later__album, .recently__album')?.textContent || 'этот альбом';
-        const artist = albumElement.querySelector('.listen-later__artist, .recently__artist')?.textContent || '';
+        const albumName = albumElement.querySelector('.listen-later__album, .recently__album, .favs__album')?.textContent || 'this album';
+        const artist = albumElement.querySelector('.listen-later__artist, .recently__artist, .favs__artist')?.textContent || '';
         const fullName = artist ? `${artist} - ${albumName}` : albumName;
         
-        if (!confirm(`⚠️ ВНИМАНИЕ! Вы собираетесь удалить "${fullName}" из базы данных навсегда!\n\nЭто действие нельзя отменить. Продолжить?`)) {
+        if (!confirm(`⚠️ WARNING! You are about to delete "${fullName}" from the database permanently!\n\nThis action cannot be undone. Continue?`)) {
             return;
         }
         
         try {
             const response = await fetch(`${CONFIG.API.BASE_URL}/${CONFIG.API.ENDPOINTS.MAIN}`, {
                 method: 'POST',
+                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -157,24 +151,24 @@ export class AlbumMenuManager {
                 });
                 
                 albumElement.remove();
-                alert('Альбом успешно удален из базы данных');
+                showToast('Album successfully deleted from the database', 'success');
                 
                 if (this.dataService) {
                     window.location.reload();
                 }
                 
             } else {
-                throw new Error(result.error || result.message || 'Ошибка при удалении');
+                throw new Error(result.error || result.message || 'Error deleting');
             }
             
         } catch (error) {
-            if (error.message.includes('авторизации') || error.message.includes('401')) {
-                alert('Ошибка авторизации. Пожалуйста, войдите в систему заново.');
+            if (error.message.includes('authorization') || error.message.includes('401')) {
+                showToast('Authorization error. Please log in again.', 'error');
                 window.musicboardApp.logout();
-            } else if (error.message.includes('Доступ запрещен') || error.message.includes('403')) {
-                alert('У вас нет прав для выполнения этого действия. Требуются права администратора.');
+            } else if (error.message.includes('Access denied') || error.message.includes('403')) {
+                showToast('You do not have permission to perform this action. Admin rights required.', 'error');
             } else {
-                alert('Ошибка при удалении: ' + error.message);
+                showToast('Error deleting: ' + error.message, 'error');
             }
         }
     }
@@ -186,50 +180,27 @@ export class AlbumMenuManager {
         if (spotifyLink) {
             window.open(spotifyLink, '_blank');
         } else {
-            const albumName = albumElement.querySelector('.recently__album, .listen-later__album')?.textContent;
-            const artist = albumElement.querySelector('.recently__artist, .listen-later__artist')?.textContent;
+            const albumName = albumElement.querySelector('.recently__album, .listen-later__album, .favs__album')?.textContent;
+            const artist = albumElement.querySelector('.recently__artist, .listen-later__artist, .favs__artist')?.textContent;
             
             if (albumName && artist) {
                 const searchQuery = encodeURIComponent(`${artist} ${albumName}`);
                 window.open(`https://open.spotify.com/search/${searchQuery}`, '_blank');
             } else {
-                alert('Не удалось найти ссылку на альбом в Spotify');
+                showToast('Could not find a link to the album on Spotify', 'warning');
             }
         }
     }
     
     extractAlbumData(element, albumId) {
-        const titleSelectors = [
-            '.album-title', '.title', '.name', 
-            'h3', 'h2', 'h4',
-            '[class*="title"]', '[class*="name"]',
-            '.recently__album', '.listen-later__album'
-        ];
-        
-        let titleElement = null;
-        for (const selector of titleSelectors) {
-            titleElement = element.querySelector(selector);
-            if (titleElement && titleElement.textContent.trim()) break;
-        }
-        
-        const artistSelectors = [
-            '.album-artist', '.artist', '.performer', '.author',
-            '[class*="artist"]', '[class*="performer"]',
-            '.recently__artist', '.listen-later__artist'
-        ];
-        
-        let artistElement = null;
-        for (const selector of artistSelectors) {
-            artistElement = element.querySelector(selector);
-            if (artistElement && artistElement.textContent.trim()) break;
-        }
-        
+        const titleElement = element.querySelector('.recently__album, .listen-later__album, .favs__album');
+        const artistElement = element.querySelector('.recently__artist, .listen-later__artist, .favs__artist');
         const coverElement = element.querySelector('img');
         
         return {
             id: albumId,
-            album_name: titleElement ? titleElement.textContent.trim() : 'Неизвестный альбом',
-            artist: artistElement ? artistElement.textContent.trim() : 'Неизвестный исполнитель',
+            album_name: titleElement ? titleElement.textContent.trim() : 'Unknown Album',
+            artist: artistElement ? artistElement.textContent.trim() : 'Unknown Artist',
             coverUrl: coverElement ? coverElement.src : CONFIG.DEFAULTS.COVER_PLACEHOLDER
         };
     }

@@ -14,10 +14,10 @@ class AlbumService {
     }
 
     /**
-     * Получить недавнюю активность пользователя
-     * @param int $userId ID пользователя
-     * @param int $limit Лимит записей
-     * @return array Массив альбомов с рейтингами
+     * Get recent user activity
+     * @param int $userId User ID
+     * @param int $limit Record limit
+     * @return array Array of albums with ratings
      */
     public function getRecentActivity($userId, $limit = 4) {
         try {
@@ -62,10 +62,10 @@ class AlbumService {
     }
 
     /**
-     * Получить список альбомов для прослушивания позже
-     * @param int $userId ID пользователя
-     * @param int $limit Лимит записей
-     * @return array Массив непрослушанных альбомов
+     * Get listen later album list
+     * @param int $userId User ID
+     * @param int $limit Record limit
+     * @return array Array of unlistened albums
      */
     public function getListenLater($userId, $limit = 8) {
         try {
@@ -106,10 +106,10 @@ class AlbumService {
     }
 
     /**
-     * Поиск альбомов по названию или исполнителю
-     * @param string $query Поисковый запрос
-     * @param int $limit Лимит результатов
-     * @return array Массив найденных альбомов
+     * Search albums by name or artist
+     * @param string $query Search query
+     * @param int $limit Result limit
+     * @return array Array of found albums
      */
     public function searchAlbums($query, $limit = 20) {
         try {
@@ -129,23 +129,29 @@ class AlbumService {
                    OR LOWER(artist) LIKE LOWER(?)
                 ORDER BY
                     CASE
+                        WHEN LOWER(album_name) = LOWER(?) THEN 0
                         WHEN LOWER(album_name) LIKE LOWER(?) THEN 1
-                        WHEN LOWER(artist) LIKE LOWER(?) THEN 2
-                        ELSE 3
+                        WHEN LOWER(album_name) LIKE LOWER(?) THEN 2
+                        WHEN LOWER(artist) = LOWER(?) THEN 3
+                        WHEN LOWER(artist) LIKE LOWER(?) THEN 4
+                        ELSE 5
                     END,
                     artist, album_name
                 LIMIT ?
             ";
 
             $searchTerm = "%{$query}%";
-            $exactSearchTerm = "{$query}%";
+            $prefixTerm = "{$query}%";
 
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute([
                 $searchTerm, 
                 $searchTerm, 
-                $exactSearchTerm, 
-                $exactSearchTerm, 
+                $query,
+                $prefixTerm, 
+                $searchTerm,
+                $query,
+                $prefixTerm, 
                 $limit
             ]);
             $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -167,18 +173,18 @@ class AlbumService {
     }
 
     /**
-     * Обогащение массива альбомов обложками (batch-загрузка)
-     * @param array $albums Массив альбомов
-     * @param string $idKey Ключ ID альбома в массиве
-     * @param bool $simpleFormat Упрощенный формат (только основные поля)
-     * @return array Обогащенный массив
+     * Enrich album array with covers (batch loading)
+     * @param array $albums Array of albums
+     * @param string $idKey Album ID key in array
+     * @param bool $simpleFormat Simplified format (main fields only)
+     * @return array Enriched array
      */
     private function enrichWithCovers($albums, $idKey = 'album_id', $simpleFormat = false) {
         if (empty($albums)) {
             return [];
         }
 
-        // Batch-загрузка всех обложек одним запросом
+        // Batch load all covers in a single query
         $albumIds = array_column($albums, $idKey);
         $coverUrls = $this->coverService->getBatchCoverUrls($albumIds);
 
@@ -196,7 +202,7 @@ class AlbumService {
                 urlencode($album['album_name']);
 
             if ($simpleFormat) {
-                // Упрощенный формат для Listen Later и Search
+                // Simplified format for Listen Later and Search
                 $enriched[] = [
                     'album_name' => $album['album_name'],
                     'artist' => $album['artist'],
@@ -206,14 +212,14 @@ class AlbumService {
                     'spotify_link' => $album['spotify_link'] ?? null
                 ];
             } else {
-                // Полный формат для Recent Activity
+                // Full format for Recent Activity
                 $enriched[] = [
                     'album_name' => $album['album_name'],
                     'artist' => $album['artist'],
-                    'rating' => $album['rating'] ?? null,
                     'coverUrl' => $coverUrl,
-                    'spotify_link' => $album['spotify_link'] ?? null,
                     'album_id' => $albumId,
+                    'spotify_link' => $album['spotify_link'] ?? null,
+                    'rating' => $album['rating'] ?? null,
                     'listened_date' => $album['listened_date'] ?? date('Y-m-d'),
                     'rating_id' => $album['rating_id'] ?? null,
                     'favorite_song' => $album['favorite_song'] ?? null,
@@ -229,9 +235,60 @@ class AlbumService {
     }
 
     /**
-     * Получить полную информацию об альбоме по ID
-     * @param int $albumId ID альбома
-     * @return array|null Данные альбома или null
+     * Get user's favorite albums
+     * @param int $userId User ID
+     * @return array Array of favorite albums with covers
+     */
+    public function getFavoriteAlbums($userId) {
+        try {
+            $query = "
+                SELECT
+                    a.id as album_id,
+                    a.artist,
+                    a.album_name,
+                    a.spotify_link,
+                    ufa.slot_number
+                FROM user_favorite_albums ufa
+                JOIN albums a ON ufa.album_id = a.id
+                WHERE ufa.user_id = ?
+                ORDER BY ufa.slot_number
+            ";
+
+            $stmt = $this->pdo->prepare($query);
+            $stmt->execute([$userId]);
+            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (empty($results)) {
+                return [];
+            }
+
+            // Save slot_number before enrichment (enrichWithCovers doesn't preserve it)
+            $slotMap = [];
+            foreach ($results as $r) {
+                $slotMap[(int)$r['album_id']] = (int)$r['slot_number'];
+            }
+
+            $enriched = $this->enrichWithCovers($results, 'album_id', true);
+
+            foreach ($enriched as &$album) {
+                $album['slot_number'] = $slotMap[(int)$album['album_id']] ?? null;
+            }
+
+            return $enriched;
+
+        } catch (PDOException $e) {
+            Logger::error('Error loading favorite albums', [
+                'user_id' => $userId,
+                'error' => $e->getMessage()
+            ]);
+            throw $e;
+        }
+    }
+
+    /**
+     * Get full album information by ID
+     * @param int $albumId Album ID
+     * @return array|null Album data or null
      */
     public function getAlbumById($albumId) {
         try {

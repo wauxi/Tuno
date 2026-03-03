@@ -4,12 +4,14 @@ if (!defined('SECURE_ACCESS')) exit('Access denied');
 require_once __DIR__ . '/../auth-functions.php';
 require_once __DIR__ . '/../utils/Logger.php';
 
-function removeFromListenLater($pdo) {
-    session_start();
+function removeFromListenLater($pdo, $data) {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
 
     if (!isset($_SESSION['user_id']) || !isset($_SESSION['username'])) {
         http_response_code(401);
-        echo json_encode(['success' => false, 'error' => 'Пользователь не авторизован.']);
+        echo json_encode(['success' => false, 'error' => 'User not authenticated.']);
         return;
     }
 
@@ -17,15 +19,14 @@ function removeFromListenLater($pdo) {
         http_response_code(403);
         echo json_encode([
             'success' => false,
-            'error' => 'Доступ запрещен. Только администратор может удалять альбомы.'
+            'error' => 'Access denied. Only administrators can delete albums.'
         ]);
         return;
     }
 
-    $data = json_decode(file_get_contents('php://input'), true);
     if (!isset($data['album_id'])) {
         http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Недостаточно данных']);
+        echo json_encode(['success' => false, 'message' => 'Insufficient data']);
         return;
     }
 
@@ -40,7 +41,7 @@ function removeFromListenLater($pdo) {
 
         if (!$album) {
             $pdo->rollback();
-            echo json_encode(['success' => false, 'message' => 'Альбом не найден']);
+            echo json_encode(['success' => false, 'message' => 'Album not found']);
             return;
         }
 
@@ -55,7 +56,7 @@ function removeFromListenLater($pdo) {
 
         echo json_encode([
             'success' => true,
-            'message' => 'Альбом успешно удален',
+            'message' => 'Album deleted successfully',
             'deleted_album' => $album
         ]);
 
@@ -63,6 +64,6 @@ function removeFromListenLater($pdo) {
         $pdo->rollback();
         Logger::error('Delete error', ['error' => $e->getMessage()]);
         http_response_code(500);
-        echo json_encode(['success' => false, 'message' => 'Ошибка при удалении']);
+        echo json_encode(['success' => false, 'message' => 'Error during deletion']);
     }
 }

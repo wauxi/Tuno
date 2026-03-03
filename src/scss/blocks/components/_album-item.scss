@@ -21,11 +21,13 @@
     border: var(--border);
 }
 
+.favs__cover-container:hover .album-menu__trigger,
 .recently__cover-container:hover .album-menu__trigger {
     opacity: 1;
     transform: scale(1);
 }
 
+.favs__item .album-menu,
 .recently__item .album-menu {
     position: absolute;
     bottom: 0px;

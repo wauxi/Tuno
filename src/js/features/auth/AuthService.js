@@ -16,6 +16,7 @@ export class AuthService {
         try {
             const response = await fetch(`${CONFIG.API.BASE_URL}/${CONFIG.API.ENDPOINTS.AUTH}`, {
                 method: 'POST',
+                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -39,11 +40,11 @@ export class AuthService {
     }
     
     getCurrentUser() {
-        // Всегда читать свежие данные из localStorage
+        // Always read fresh data from localStorage
         return getCurrentUserData();
     }
     
     isUserLoggedIn() {
-        return this.isLoggedIn;
+        return getCurrentUserData() !== null;
     }
 }

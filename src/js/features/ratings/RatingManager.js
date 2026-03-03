@@ -3,17 +3,22 @@ import { CONFIG, UI } from '../../config/constants.js';
 import { eventBus, EVENTS } from '../../shared/utils/EventBus.js';
 import { getCurrentUserId, isUserLoggedIn } from '../auth/authUtils.js';
 import { logger } from '../../shared/utils/Logger.js';
+import { showToast } from '../../shared/utils/toast.js';
 
 export class RatingManager {
     constructor() {
         this.apiUrl = `${CONFIG.API.BASE_URL}/${CONFIG.API.ENDPOINTS.RATINGS}`;
-        this.currentUserId = getCurrentUserId();
+    }
+
+    get currentUserId() {
+        return getCurrentUserId();
     }
 
     async addRating(albumId, ratingData) {
         try {
             const response = await fetch(this.apiUrl, {
                 method: 'POST',
+                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -31,7 +36,7 @@ export class RatingManager {
 
             return result;
         } catch (error) {
-            logger.error('Ошибка добавления оценки:', error);
+            logger.error('Error adding rating:', error);
             throw error;
         }
     }
@@ -40,6 +45,7 @@ export class RatingManager {
         try {
             const response = await fetch(this.apiUrl, {
                 method: 'PUT',
+                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -56,7 +62,7 @@ export class RatingManager {
 
             return result;
         } catch (error) {
-            logger.error('Ошибка обновления оценки:', error);
+            logger.error('Error updating rating:', error);
             throw error;
         }
     }
@@ -65,6 +71,7 @@ export class RatingManager {
         try {
             const response = await fetch(this.apiUrl, {
                 method: 'DELETE',
+                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -80,7 +87,7 @@ export class RatingManager {
 
             return result;
         } catch (error) {
-            logger.error('Ошибка удаления оценки:', error);
+            logger.error('Error deleting rating:', error);
             throw error;
         }
     }
@@ -88,12 +95,14 @@ export class RatingManager {
     async getRating(albumId, userId = null) {
         try {
             const userIdParam = userId || this.currentUserId;
-            const response = await fetch(`${this.apiUrl}?album_id=${albumId}&user_id=${userIdParam}`);
+            const response = await fetch(`${this.apiUrl}?album_id=${albumId}&user_id=${userIdParam}`, {
+                credentials: 'include'
+            });
             
             const result = await response.json();
             return result;
         } catch (error) {
-            logger.error('Ошибка получения оценки:', error);
+            logger.error('Error getting rating:', error);
             throw error;
         }
     }
@@ -150,7 +159,7 @@ export class RatingManager {
                 await this.addRating(ratingData.album_id, ratingData);
             }
             
-            // Испустить событие с данными для реактивного обновления
+            // Emit event with data for reactive update
             eventBus.emit(EVENTS.RATING_UPDATED, { 
                 ratingData, 
                 existingRating,
@@ -159,7 +168,7 @@ export class RatingManager {
             
         } catch (error) {
             logger.error('Error saving rating:', error);
-            alert('Error saving rating: ' + error.message);
+            showToast('Error saving rating: ' + error.message, 'error');
         }
     }
 
@@ -169,7 +178,7 @@ export class RatingManager {
         try {
             await this.deleteRating(existingRating.id);
             
-            // Испустить событие для реактивного обновления
+            // Emit event for reactive update
             eventBus.emit(EVENTS.RATING_DELETED, { 
                 ratingId: existingRating.id,
                 albumId: existingRating.album_id,
@@ -178,7 +187,7 @@ export class RatingManager {
             
         } catch (error) {
             logger.error('Error deleting rating:', error);
-            alert('Error deleting rating: ' + error.message);
+            showToast('Error deleting rating: ' + error.message, 'error');
         }
     }
 }

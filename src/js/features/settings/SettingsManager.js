@@ -1,4 +1,6 @@
 import { logger } from '../../shared/utils/Logger.js';
+import { escapeHtml } from '../../shared/utils/sanitize.js';
+import { showToast } from '../../shared/utils/toast.js';
 
 export class SettingsManager {
     constructor() {
@@ -7,6 +9,12 @@ export class SettingsManager {
         this.bioTextarea = document.getElementById('bio');
         this.bioCounter = document.getElementById('bioCounter');
         this.currentUser = null;
+
+        this.pendingFavorites = { 1: null, 2: null, 3: null, 4: null };
+        this.pickerSlot = null;
+        this.searchDebounceTimer = null;
+        this.apiBaseUrl = document.querySelector('meta[name="api-base-url"]')?.getAttribute('content') || 'http://localhost:8080';
+        this._pickerEscHandler = null;
         
         this.init();
     }
@@ -20,7 +28,14 @@ export class SettingsManager {
         
         this.currentUser = JSON.parse(userData);
         
+        // Show avatar from localStorage immediately, without waiting for server
+        if (this.currentUser.avatar_url && this.avatarImage) {
+            const apiBase = this.apiBaseUrl;
+            this.avatarImage.src = `${apiBase}/${this.currentUser.avatar_url}`;
+        }
+        
         await this.loadUserData();
+        this.initSlotListeners();
         
         if (this.avatarInput) {
             this.avatarInput.addEventListener('change', this.handleAvatarChange.bind(this));
@@ -41,12 +56,34 @@ export class SettingsManager {
             cancelBtn.addEventListener('click', this.handleCancel.bind(this));
         }
     }
+
+    initSlotListeners() {
+        const grid = document.querySelector('.settings__albums-grid');
+        if (!grid) return;
+
+        grid.addEventListener('click', (e) => {
+            const removeBtn = e.target.closest('.settings__album-remove');
+            if (removeBtn) {
+                e.stopPropagation();
+                const slot = removeBtn.closest('.settings__album-slot');
+                if (slot) this.removeAlbum(parseInt(slot.dataset.slot));
+                return;
+            }
+
+            const slot = e.target.closest('.settings__album-slot');
+            if (slot) {
+                this.openAlbumPicker(parseInt(slot.dataset.slot));
+            }
+        });
+    }
     
     async loadUserData() {
         try {
             logger.debug('Loading user data for user:', this.currentUser);
             
-            const response = await fetch(`http://localhost:8080/api/user-settings.php?user_id=${this.currentUser.id}`);
+            const response = await fetch(`${this.apiBaseUrl}/api/user-settings.php?user_id=${this.currentUser.id}`, {
+                credentials: 'include'
+            });
             const data = await response.json();
             
             logger.debug('User settings response:', data);
@@ -59,7 +96,7 @@ export class SettingsManager {
                 logger.debug('Avatar URL:', data.user.avatar_url);
                 
                 if (data.user.avatar_url) {
-                    const avatarPath = `http://localhost:8080/${data.user.avatar_url}`;
+                    const avatarPath = `${this.apiBaseUrl}/${data.user.avatar_url}`;
                     this.avatarImage.src = avatarPath;
                 }
                 
@@ -67,36 +104,221 @@ export class SettingsManager {
                 this.loadFavoriteAlbums(data.favoriteAlbums || []);
             } else {
                 logger.error('Failed to load user data:', data.message);
-                this.showToast(data.message || 'Failed to load user data', 'error');
+                showToast(data.message || 'Failed to load user data', 'error');
             }
         } catch (error) {
             logger.error('Failed to load user data:', error);
-            this.showToast('Failed to load user data', 'error');
+            showToast('Failed to load user data', 'error');
         }
     }
     
     loadFavoriteAlbums(favorites) {
-        document.querySelectorAll('.settings__album-slot').forEach(slot => {
-            slot.innerHTML = `
-                <div class="settings__album-placeholder">
-                    <span>+</span>
-                </div>
-            `;
-        });
-        
+        this.pendingFavorites = { 1: null, 2: null, 3: null, 4: null };
+
         favorites.forEach(fav => {
-            const slot = document.querySelector(`[data-slot="${fav.slot_number}"]`);
-            if (slot) {
-                slot.innerHTML = `
-                    <img src="${fav.cover_url || '/img/default-cover.png'}" alt="${fav.album_name}">
-                    <div class="settings__album-info">
-                        <span class="settings__album-artist">${fav.artist}</span>
-                        <span class="settings__album-name">${fav.album_name}</span>
-                    </div>
-                    <button class="settings__album-remove" data-album-id="${fav.album_id}">×</button>
-                `;
+            const slotNum = parseInt(fav.slot_number);
+            if (slotNum >= 1 && slotNum <= 4) {
+                this.pendingFavorites[slotNum] = {
+                    album_id: fav.album_id,
+                    album_name: fav.album_name,
+                    artist: fav.artist,
+                    coverUrl: fav.coverUrl || fav.cover_url || '/img/default-cover.png'
+                };
             }
         });
+
+        this.renderAllSlots();
+    }
+
+    renderAllSlots() {
+        for (let i = 1; i <= 4; i++) {
+            this.renderSlot(i);
+        }
+    }
+
+    renderSlot(slotNumber) {
+        const slot = document.querySelector(`[data-slot="${slotNumber}"]`);
+        if (!slot) return;
+
+        const album = this.pendingFavorites[slotNumber];
+
+        if (album) {
+            const template = document.getElementById('album-slot-filled');
+            if (template) {
+                const content = template.content.cloneNode(true);
+                content.querySelector('.settings__album-cover').src = album.coverUrl;
+                content.querySelector('.settings__album-cover').alt = album.album_name;
+                content.querySelector('.settings__album-name').textContent = album.album_name;
+                content.querySelector('.settings__album-artist').textContent = album.artist;
+                slot.innerHTML = '';
+                slot.appendChild(content);
+            }
+        } else {
+            slot.innerHTML = `
+                <div class="settings__album-placeholder">
+                    <span class="settings__album-plus">+</span>
+                    <span class="settings__album-label">Add Album</span>
+                </div>
+            `;
+        }
+    }
+
+    openAlbumPicker(slotNumber) {
+        this.pickerSlot = slotNumber;
+
+        const existing = document.getElementById('albumPickerModal');
+        if (existing) existing.remove();
+
+        const modal = document.createElement('div');
+        modal.id = 'albumPickerModal';
+        modal.className = 'settings__picker-overlay';
+        modal.innerHTML = `
+            <div class="settings__picker">
+                <div class="settings__picker-header">
+                    <h3 class="settings__picker-title">Select Album</h3>
+                    <button class="settings__picker-close" type="button" aria-label="Close">×</button>
+                </div>
+                <div class="settings__picker-search">
+                    <input
+                        type="text"
+                        class="settings__picker-input"
+                        id="pickerSearchInput"
+                        placeholder="Search by album or artist..."
+                        autocomplete="off"
+                    />
+                </div>
+                <div class="settings__picker-results" id="pickerResults">
+                    <p class="settings__picker-hint">Start typing to search albums</p>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+        document.body.style.overflow = 'hidden';
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) this.closeAlbumPicker();
+        });
+
+        modal.querySelector('.settings__picker-close').addEventListener('click', () => {
+            this.closeAlbumPicker();
+        });
+
+        const input = modal.querySelector('#pickerSearchInput');
+        input.addEventListener('input', (e) => {
+            clearTimeout(this.searchDebounceTimer);
+            const query = e.target.value.trim();
+            if (query.length < 2) {
+                document.getElementById('pickerResults').innerHTML =
+                    '<p class="settings__picker-hint">Start typing to search albums</p>';
+                return;
+            }
+            this.searchDebounceTimer = setTimeout(() => this.searchAlbums(query), 300);
+        });
+
+        this._pickerEscHandler = (e) => {
+            if (e.key === 'Escape') this.closeAlbumPicker();
+        };
+        document.addEventListener('keydown', this._pickerEscHandler);
+
+        requestAnimationFrame(() => input.focus());
+    }
+
+    closeAlbumPicker() {
+        const modal = document.getElementById('albumPickerModal');
+        if (modal) modal.remove();
+        this.pickerSlot = null;
+        clearTimeout(this.searchDebounceTimer);
+        document.body.style.overflow = '';
+        if (this._pickerEscHandler) {
+            document.removeEventListener('keydown', this._pickerEscHandler);
+            this._pickerEscHandler = null;
+        }
+    }
+
+    async searchAlbums(query) {
+        const resultsEl = document.getElementById('pickerResults');
+        if (!resultsEl) return;
+
+        resultsEl.innerHTML = '<p class="settings__picker-hint">Searching...</p>';
+
+        try {
+            const response = await fetch(
+                `${this.apiBaseUrl}/api/index.php?action=search&q=${encodeURIComponent(query)}`
+            );
+            const data = await response.json();
+
+            if (data.success && data.albums && data.albums.length > 0) {
+                this.renderPickerResults(data.albums);
+            } else {
+                resultsEl.innerHTML = '<p class="settings__picker-hint">No albums found</p>';
+            }
+        } catch (error) {
+            logger.error('Album search error:', error);
+            resultsEl.innerHTML = '<p class="settings__picker-hint">Search failed, please try again</p>';
+        }
+    }
+
+    renderPickerResults(albums) {
+        const resultsEl = document.getElementById('pickerResults');
+        if (!resultsEl) return;
+
+        resultsEl.innerHTML = '';
+
+        albums.forEach(album => {
+            const albumId = album.album_id || album.id;
+            const coverUrl = album.coverUrl || album.cover_url || '/img/default-cover.png';
+
+            const btn = document.createElement('button');
+            btn.className = 'settings__picker-item';
+            btn.type = 'button';
+            btn.innerHTML = `
+                <img
+                    class="settings__picker-item-cover"
+                    src="${coverUrl}"
+                    alt="${escapeHtml(album.album_name)}"
+                    onerror="this.src='/img/default-cover.png'"
+                />
+                <div class="settings__picker-item-info">
+                    <span class="settings__picker-item-name">${escapeHtml(album.album_name)}</span>
+                    <span class="settings__picker-item-artist">${escapeHtml(album.artist)}</span>
+                </div>
+            `;
+
+            btn.addEventListener('click', () => {
+                this.selectAlbum({
+                    album_id: albumId,
+                    album_name: album.album_name,
+                    artist: album.artist,
+                    coverUrl
+                });
+            });
+
+            resultsEl.appendChild(btn);
+        });
+    }
+
+    selectAlbum(albumData) {
+        if (!this.pickerSlot) return;
+
+        // Check for duplicate
+        for (let slot = 1; slot <= 4; slot++) {
+            if (slot === this.pickerSlot) continue;
+            const existing = this.pendingFavorites[slot];
+            if (existing && existing.album_id == albumData.album_id) {
+                showToast('This album is already in your favorites', 'error');
+                return;
+            }
+        }
+
+        this.pendingFavorites[this.pickerSlot] = albumData;
+        this.renderSlot(this.pickerSlot);
+        this.closeAlbumPicker();
+    }
+
+    removeAlbum(slotNumber) {
+        this.pendingFavorites[slotNumber] = null;
+        this.renderSlot(slotNumber);
     }
     
     async handleAvatarChange(e) {
@@ -106,13 +328,13 @@ export class SettingsManager {
         
         const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
         if (!validTypes.includes(file.type)) {
-            this.showToast('Please select a valid image file (PNG, JPG, or WEBP)', 'error');
+            showToast('Please select a valid image file (PNG, JPG, or WEBP)', 'error');
             return;
         }
         
         const maxSize = 2 * 1024 * 1024;
         if (file.size > maxSize) {
-            this.showToast('Image size must be less than 2MB', 'error');
+            showToast('Image size must be less than 2MB', 'error');
             return;
         }
         
@@ -135,8 +357,9 @@ export class SettingsManager {
         logger.info('📤 Uploading avatar...', file.name);
         
         try {
-            const response = await fetch(`http://localhost:8080/api/upload-avatar.php`, {
+            const response = await fetch(`${this.apiBaseUrl}/api/upload-avatar.php`, {
                 method: 'POST',
+                credentials: 'include',
                 body: formData
             });
             
@@ -145,35 +368,32 @@ export class SettingsManager {
             logger.info('📥 Upload response:', data);
             
             if (data.success) {
-                // Обновить localStorage с НОВЫМ путём к аватару
                 this.currentUser.avatar_url = data.avatar_url;
                 localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
                 
                 logger.success('localStorage updated with new avatar:', data.avatar_url);
                 
-                // Обновить аватар в header (navigation)
                 const headerAvatar = document.querySelector('.navigation__user-avatar img');
                 if (headerAvatar) {
-                    const avatarPath = `http://localhost:8080/${data.avatar_url}`;
+                    const avatarPath = `${this.apiBaseUrl}/${data.avatar_url}`;
                     headerAvatar.src = avatarPath;
                     logger.success('Header avatar updated:', avatarPath);
                 }
                 
-                // Обновить аватар на странице settings
                 const settingsAvatar = this.avatarImage;
                 if (settingsAvatar) {
-                    const avatarPath = `http://localhost:8080/${data.avatar_url}`;
+                    const avatarPath = `${this.apiBaseUrl}/${data.avatar_url}`;
                     settingsAvatar.src = avatarPath;
                     logger.success('Settings avatar updated:', avatarPath);
                 }
                 
-                this.showToast('Avatar uploaded successfully!', 'success');
+                showToast('Avatar uploaded successfully!', 'success');
             } else {
-                this.showToast(data.message || 'Failed to upload avatar', 'error');
+                showToast(data.message || 'Failed to upload avatar', 'error');
             }
         } catch (error) {
             logger.error('Upload error:', error);
-            this.showToast('Failed to upload avatar', 'error');
+            showToast('Failed to upload avatar', 'error');
         }
     }
     
@@ -192,18 +412,19 @@ export class SettingsManager {
         const bio = document.getElementById('bio')?.value.trim();
         
         if (!username || username.length < 2) {
-            this.showToast('Username must be at least 2 characters', 'error');
+            showToast('Username must be at least 2 characters', 'error');
             return;
         }
         
         if (bio.length > 500) {
-            this.showToast('Bio must be less than 500 characters', 'error');
+            showToast('Bio must be less than 500 characters', 'error');
             return;
         }
         
         try {
-            const response = await fetch(`http://localhost:8080/api/user-settings.php`, {
+            const response = await fetch(`${this.apiBaseUrl}/api/user-settings.php`, {
                 method: 'POST',
+                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json'
                 },
@@ -219,59 +440,56 @@ export class SettingsManager {
             const data = await response.json();
             
             if (data.success) {
-                // Обновить localStorage
                 this.currentUser.username = username;
                 this.currentUser.display_name = displayName;
                 this.currentUser.bio = bio;
                 localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
+
+                await this.saveFavorites();
                 
-                this.showToast('Settings saved! Reload main page to see changes.', 'success');
+                showToast('Settings saved! Reload main page to see changes.', 'success');
             } else {
-                this.showToast(data.message || 'Failed to save settings', 'error');
+                showToast(data.message || 'Failed to save settings', 'error');
             }
         } catch (error) {
             logger.error('Save error:', error);
-            this.showToast('Failed to save settings', 'error');
+            showToast('Failed to save settings', 'error');
+        }
+    }
+
+    async saveFavorites() {
+        const favorites = [];
+        for (let slot = 1; slot <= 4; slot++) {
+            const album = this.pendingFavorites[slot];
+            if (album) {
+                favorites.push({ album_id: album.album_id, slot_number: slot });
+            }
+        }
+
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/api/user-settings.php`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'update_favorites',
+                    user_id: this.currentUser.id,
+                    favorites
+                })
+            });
+
+            const data = await response.json();
+            if (!data.success) {
+                logger.error('Failed to save favorites:', data.message);
+                showToast('Failed to save favorites: ' + (data.message || ''), 'error');
+            }
+        } catch (error) {
+            logger.error('Error saving favorites:', error);
+            showToast('Failed to save favorites', 'error');
         }
     }
     
     handleCancel() {
         window.location.reload();
-    }
-    
-    showToast(message, type = 'info') {
-        const container = document.querySelector('.settings__toast-container');
-        if (!container) return;
-        
-        const template = document.getElementById('toast-template');
-        if (!template) return;
-        
-        const toast = template.content.cloneNode(true);
-        const toastElement = toast.querySelector('.settings__toast');
-        
-        toastElement.classList.add(type);
-        
-        const icon = toastElement.querySelector('.settings__toast-icon');
-        if (type === 'success') {
-            icon.textContent = '✓';
-        } else if (type === 'error') {
-            icon.textContent = '✗';
-        } else {
-            icon.textContent = 'ℹ';
-        }
-        
-        const messageEl = toastElement.querySelector('.settings__toast-message');
-        messageEl.textContent = message;
-        
-        const closeBtn = toastElement.querySelector('.settings__toast-close');
-        closeBtn.addEventListener('click', () => {
-            toastElement.remove();
-        });
-        
-        container.appendChild(toastElement);
-        
-        setTimeout(() => {
-            toastElement.remove();
-        }, 5000);
     }
 }
